@@ -1,3 +1,35 @@
+
+// ---- FOTOS DEL VEHÍCULO ----
+let fotosBase64 = [];
+
+function previewFotos(input) {
+  fotosBase64 = [];
+  const preview = document.getElementById('turno-fotos-preview');
+  preview.innerHTML = '';
+
+  const files = Array.from(input.files);
+  if (!files.length) {
+    preview.innerHTML = '<p class="text-muted text-sm">📷 Toca para agregar fotos</p>';
+    return;
+  }
+
+  files.forEach((file, idx) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      fotosBase64.push(e.target.result);
+      const img = document.createElement('img');
+      img.src = e.target.result;
+      img.style.cssText = 'width:80px;height:80px;object-fit:cover;border-radius:6px;border:2px solid var(--border);cursor:pointer';
+      img.title = 'Click para eliminar';
+      img.onclick = () => {
+        fotosBase64.splice(idx, 1);
+        img.remove();
+      };
+      preview.appendChild(img);
+    };
+    reader.readAsDataURL(file);
+  });
+}
 // ============================================================
 // AGENDA.JS — Turnos y gestión de capacidad diaria
 // ============================================================
@@ -100,14 +132,39 @@ async function abrirModalTurno(id = null) {
 
   if (id) {
     const t = await dbGet('agenda', id);
-    document.getElementById('turno-fecha').value        = t.fecha || '';
-    document.getElementById('turno-hora').value         = t.hora || '';
-    document.getElementById('turno-cliente').value      = t.cliente_id || '';
-    document.getElementById('turno-vehiculo-desc').value= t.vehiculo_desc || '';
-    document.getElementById('turno-servicio').value     = t.servicio || '';
-    document.getElementById('turno-duracion').value     = t.duracion || '60';
-    document.getElementById('turno-notas').value        = t.notas || '';
-    document.getElementById('turno-estado').value       = t.estado || 'pendiente';
+    document.getElementById('turno-fecha').value   = t.fecha || '';
+    document.getElementById('turno-hora').value    = t.hora || '';
+    document.getElementById('turno-cliente').value = t.cliente_id || '';
+    document.getElementById('turno-cliente-libre').value = t.cliente_nombre || '';
+    document.getElementById('turno-telefono').value = t.cliente_telefono || '';
+    document.getElementById('turno-email').value    = t.cliente_email || '';
+    document.getElementById('turno-marca').value    = t.vehiculo_marca || '';
+    document.getElementById('turno-modelo').value   = t.vehiculo_modelo || '';
+    document.getElementById('turno-anio').value     = t.vehiculo_anio || '';
+    document.getElementById('turno-color').value    = t.vehiculo_color || '';
+    document.getElementById('turno-placa').value    = t.vehiculo_placa || '';
+    document.getElementById('turno-vin').value      = t.vehiculo_vin || '';
+    document.getElementById('turno-km').value       = t.vehiculo_km || '';
+    document.getElementById('turno-servicio').value = t.servicio || '';
+    document.getElementById('turno-duracion').value = t.duracion || '60';
+    document.getElementById('turno-notas').value    = t.notas || '';
+    document.getElementById('turno-estado').value   = t.estado || 'pendiente';
+    // Mostrar fotos guardadas
+    if (t.fotos) {
+      try {
+        fotosBase64 = JSON.parse(t.fotos);
+        const prev = document.getElementById('turno-fotos-preview');
+        if (prev) {
+          prev.innerHTML = '';
+          fotosBase64.forEach((src, idx) => {
+            const img = document.createElement('img');
+            img.src = src;
+            img.style.cssText = 'width:80px;height:80px;object-fit:cover;border-radius:6px;border:2px solid var(--border)';
+            prev.appendChild(img);
+          });
+        }
+      } catch(e) {}
+    }
   }
 
   abrirModal('modal-turno');
@@ -137,12 +194,29 @@ async function guardarTurno() {
     clienteNombre = document.getElementById('turno-cliente-libre')?.value.trim() || 'Sin registrar';
   }
 
+  const marca  = document.getElementById('turno-marca')?.value.trim() || '';
+  const modelo = document.getElementById('turno-modelo')?.value.trim() || '';
+  const anio   = document.getElementById('turno-anio')?.value.trim() || '';
+  const placa  = document.getElementById('turno-placa')?.value.trim().toUpperCase() || '';
+  const vehiculoDesc = [marca, modelo, anio, placa ? '· '+placa : ''].filter(Boolean).join(' ');
+
   const data = {
     fecha,
     hora,
     cliente_id:     clienteId ? parseInt(clienteId) : null,
     cliente_nombre: clienteNombre,
-    vehiculo_desc:  document.getElementById('turno-vehiculo-desc').value.trim(),
+    cliente_telefono: document.getElementById('turno-telefono')?.value.trim() || '',
+    cliente_email:    document.getElementById('turno-email')?.value.trim() || '',
+    vehiculo_desc:  vehiculoDesc || document.getElementById('turno-vehiculo-desc')?.value.trim() || '',
+    vehiculo_marca: marca,
+    vehiculo_modelo: modelo,
+    vehiculo_anio:  anio,
+    vehiculo_color: document.getElementById('turno-color')?.value.trim() || '',
+    vehiculo_placa: placa,
+    vehiculo_vin:   document.getElementById('turno-vin')?.value.trim() || '',
+    vehiculo_km:    parseInt(document.getElementById('turno-km')?.value) || null,
+    vehiculo_tipo:  document.getElementById('turno-tipo-veh')?.value || 'sedan',
+    fotos:          fotosBase64.length ? JSON.stringify(fotosBase64) : null,
     servicio:       servicio || 'Servicio general',
     duracion:       parseInt(document.getElementById('turno-duracion').value) || 60,
     notas:          document.getElementById('turno-notas').value.trim(),
