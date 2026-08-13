@@ -19,7 +19,7 @@ async function cargarInventario(busqueda = '') {
   }
 
   tbody.innerHTML = filtrados.map(r => {
-    const bajo = (r.stock || 0) <= (r.stockMin || 5);
+    const bajo = (r.stock || 0) <= (r.stock_min || 5);
     return `
     <tr>
       <td class="mono text-sm">${r.codigo || '—'}</td>
@@ -27,8 +27,8 @@ async function cargarInventario(busqueda = '') {
       <td class="text-sm text-muted">${r.categoria || '—'}</td>
       <td class="text-sm">${r.ubicacion || '—'}</td>
       <td class="mono text-sm">${r.stock || 0}</td>
-      <td class="mono text-sm">${formatMoney(r.precioCosto)}</td>
-      <td class="mono text-sm">${formatMoney(r.precioVenta)}</td>
+      <td class="mono text-sm">${formatMoney(r.precio_costo)}</td>
+      <td class="mono text-sm">${formatMoney(r.precio_venta)}</td>
       <td>
         <div class="td-actions">
           <button class="btn btn-xs btn-green" onclick="ajustarStock(${r.id})">📦</button>
@@ -43,7 +43,7 @@ async function cargarInventario(busqueda = '') {
 function abrirModalRepuesto(id = null) {
   repuestoEditId = id;
   document.getElementById('modal-repuesto-titulo').textContent = id ? 'Editar Repuesto' : 'Nuevo Repuesto';
-  document.getElementById('form-repuesto').reset();
+  document.querySelectorAll('#form-repuesto input, #form-repuesto select, #form-repuesto textarea').forEach(el => { if(el.type==='checkbox') el.checked=false; else if(el.type==='number') el.value=el.defaultValue||'0'; else el.value=''; });
   if (!id) { abrirModal('modal-repuesto'); return; }
   dbGet('repuestos', id).then(r => {
     document.getElementById('rep-codigo').value = r.codigo || '';
@@ -51,9 +51,9 @@ function abrirModalRepuesto(id = null) {
     document.getElementById('rep-categoria').value = r.categoria || '';
     document.getElementById('rep-ubicacion').value = r.ubicacion || '';
     document.getElementById('rep-stock').value = r.stock || 0;
-    document.getElementById('rep-stockmin').value = r.stockMin || 5;
-    document.getElementById('rep-costo').value = r.precioCosto || 0;
-    document.getElementById('rep-venta').value = r.precioVenta || 0;
+    document.getElementById('rep-stockmin').value = r.stock_min || 5;
+    document.getElementById('rep-costo').value = r.precio_costo || 0;
+    document.getElementById('rep-venta').value = r.precio_venta || 0;
     document.getElementById('rep-notas').value = r.notas || '';
     abrirModal('modal-repuesto');
   });
@@ -66,9 +66,9 @@ async function guardarRepuesto() {
     categoria:   document.getElementById('rep-categoria').value.trim(),
     ubicacion:   document.getElementById('rep-ubicacion').value.trim(),
     stock:       parseFloat(document.getElementById('rep-stock').value) || 0,
-    stockMin:    parseFloat(document.getElementById('rep-stockmin').value) || 5,
-    precioCosto: parseFloat(document.getElementById('rep-costo').value) || 0,
-    precioVenta: parseFloat(document.getElementById('rep-venta').value) || 0,
+    stock_min:    parseFloat(document.getElementById('rep-stockmin').value) || 5,
+    precio_costo: parseFloat(document.getElementById('rep-costo').value) || 0,
+    precio_venta: parseFloat(document.getElementById('rep-venta').value) || 0,
     notas:       document.getElementById('rep-notas').value.trim(),
   };
   if (!data.nombre) { showToast('El nombre es requerido', 'error'); return; }

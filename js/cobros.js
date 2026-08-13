@@ -48,9 +48,9 @@ async function cargarCobros(busqueda = '') {
   }).join('');
 }
 
-let cuentaCobraId = null;
+let cuenta_cobrar_id = null;
 async function abrirModalPago(cuentaId) {
-  cuentaCobraId = cuentaId;
+  cuenta_cobrar_id = cuentaId;
   const cuenta = await dbGet('cuentas_cobrar', cuentaId);
   document.getElementById('pago-cliente').textContent = cuenta.cliente_nombre;
   document.getElementById('pago-pendiente').textContent = formatMoney(cuenta.monto_pendiente);
@@ -61,14 +61,14 @@ async function abrirModalPago(cuentaId) {
 }
 
 async function guardarPago() {
-  const cuenta = await dbGet('cuentas_cobrar', cuentaCobraId);
+  const cuenta = await dbGet('cuentas_cobrar', cuenta_cobrar_id);
   const monto = parseFloat(document.getElementById('pago-monto').value) || 0;
   if (monto <= 0) { showToast('Monto inválido', 'error'); return; }
   if (monto > cuenta.monto_pendiente) { showToast('El monto excede el pendiente', 'error'); return; }
 
   const u = getUsuarioActual();
   await dbAdd('pagos', {
-    cuenta_cobrar_id: cuentaCobraId,
+    cuenta_cobrar_id: cuenta_cobrar_id,
     factura_id: cuenta.factura_id,
     monto,
     metodo_pago: document.getElementById('pago-metodo').value,
@@ -79,7 +79,7 @@ async function guardarPago() {
   const nuevoPagado = (parseFloat(cuenta.monto_pagado) || 0) + monto;
   const nuevoEstado = nuevoPagado >= cuenta.monto_total ? 'pagado' : 'parcial';
   await dbUpdate('cuentas_cobrar', {
-    id: cuentaCobraId,
+    id: cuenta_cobrar_id,
     monto_pagado: nuevoPagado,
     estado: nuevoEstado,
   });

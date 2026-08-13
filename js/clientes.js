@@ -94,7 +94,7 @@ async function verVehiculos(clienteId) {
 }
 
 async function cargarVehiculos(clienteId) {
-  const vehiculos = await dbGetByIndex('vehiculos', 'clienteId', clienteId);
+  const vehiculos = await dbGetByIndex('vehiculos', 'cliente_id', clienteId);
   const lista = document.getElementById('vehiculos-lista');
   if (!vehiculos.length) {
     lista.innerHTML = `<div class="empty-state"><div class="ico">🚗</div><h3>Sin vehículos</h3><p>Agrega un vehículo a este cliente</p></div>`;
@@ -133,7 +133,7 @@ function abrirModalVehiculo(id = null) {
 
 async function guardarVehiculo() {
   const data = {
-    clienteId: vehiculoClienteId,
+    cliente_id: vehiculoClienteId,
     marca:  document.getElementById('veh-marca').value.trim(),
     modelo: document.getElementById('veh-modelo').value.trim(),
     anio:   document.getElementById('veh-anio').value.trim(),
