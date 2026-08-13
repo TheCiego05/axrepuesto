@@ -111,6 +111,12 @@ async function generarNumeroFactura() {
 let usuarioActual = null;
 
 async function loginUsuario(email, password) {
+  // Verificar si está bloqueado por intentos fallidos
+  const { data: bloqueado } = await getClient().rpc('esta_bloqueado', { p_email: email });
+  if (bloqueado) {
+    return { error: 'Cuenta bloqueada temporalmente. Intenta en 15 minutos.' };
+  }
+
   // Auth simple con hash SHA-256
   const encoder = new TextEncoder();
   const hashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(password));
@@ -123,14 +129,28 @@ async function loginUsuario(email, password) {
     .eq('activo', true)
     .single();
 
-  if (error || !user) return { error: 'Usuario no encontrado' };
+  if (error || !user) {
+    // Registrar intento fallido
+    await getClient().from('login_intentos').insert({ email, exitoso: false });
+    return { error: 'Usuario no encontrado' };
+  }
 
   // Primera vez (sin password_hash) o verificar hash
   if (user.password_hash && user.password_hash !== hash) {
-    return { error: 'Contraseña incorrecta' };
+    await getClient().from('login_intentos').insert({ email, exitoso: false });
+    const { data: intentosData } = await getClient()
+      .from('login_intentos')
+      .select('id')
+      .eq('email', email)
+      .eq('exitoso', false)
+      .gte('creado_en', new Date(Date.now() - 15*60*1000).toISOString());
+    const restantes = Math.max(0, 5 - (intentosData?.length || 0));
+    return { error: `Contraseña incorrecta. ${restantes} intento(s) restante(s).` };
   }
 
-  // Si es primera vez, guardar el hash
+  // Login exitoso
+  await getClient().from('login_intentos').insert({ email, exitoso: true });
+
   if (!user.password_hash) {
     await getClient().from('usuarios')
       .update({ password_hash: hash, ultimo_acceso: new Date().toISOString() })
@@ -152,7 +172,24 @@ function getUsuarioActual() {
   return null;
 }
 
+
+// ---- AUDITORÍA ----
+async function registrarAuditoria(accion, tabla = null, registroId = null, detalle = {}) {
+  const u = getUsuarioActual();
+  try {
+    await getClient().from('auditoria').insert({
+      usuario_id:     u?.id || null,
+      usuario_nombre: u?.nombre || 'Sistema',
+      accion,
+      tabla,
+      registro_id:    registroId,
+      detalle,
+    });
+  } catch(e) { /* silencioso */ }
+}
+
 function logout() {
+  registrarAuditoria('LOGOUT');
   usuarioActual = null;
   sessionStorage.removeItem('llave10_user');
   mostrarLogin();

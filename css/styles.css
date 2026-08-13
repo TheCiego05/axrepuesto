@@ -1,19 +1,19 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
 
 :root {
-  --bg:      #0a0e17;
-  --bg2:     #0e1628;
-  --bg3:     #132035;
-  --bg4:     #1a2d45;
-  --border:  #1a2d45;
-  --border2: #1e3654;
+  --bg:      #0f1623;
+  --bg2:     #152033;
+  --bg3:     #1a2840;
+  --bg4:     #1e3050;
+  --border:  #1e3050;
+  --border2: #254060;
   --red:     #009EED;
   --red2:    #007ec4;
   --red-dim: rgba(0,158,237,0.1);
   --red-glow:rgba(0,158,237,0.18);
   --text:    #e8e8ec;
-  --text2:   #5a7da0;
-  --text3:   #2a4060;
+  --text2:   #6a90b5;
+  --text3:   #304d70;
   --green:   #16a34a;
   --blue:    #2563eb;
   --yellow:  #b45309;

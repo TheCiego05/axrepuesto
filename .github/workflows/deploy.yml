@@ -1,0 +1,26 @@
+# ============================================================
+# GitHub Actions — Deploy con variables de entorno seguras
+# ============================================================
+name: Deploy Llave10
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Inyectar Supabase Key
+        run: |
+          sed -i "s|TU_ANON_KEY_AQUI|${{ secrets.SUPABASE_ANON_KEY }}|g" js/supabase.js
+          echo "✅ Supabase key inyectada"
+
+      - name: Deploy a GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./
+          publish_branch: gh-pages

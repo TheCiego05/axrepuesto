@@ -84,6 +84,7 @@ async function handleLogin() {
   mostrarApp();
   navegarA('dashboard');
   actualizarDashboard();
+  registrarAuditoria('LOGIN');
   showToast(`Bienvenido, ${user.nombre}`, 'success');
 }
 

@@ -353,6 +353,26 @@
         <div id="secuencias-lista"></div>
       </div>
     </div>
+
+    <!-- DATOS DEMO -->
+    <div class="table-wrap" style="padding:20px;margin-top:20px;border:1px dashed var(--border2)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div>
+          <h3 style="font-size:0.95rem">🧪 Datos de Demostración</h3>
+          <p class="text-xs text-muted" style="margin-top:3px">Carga datos de prueba para explorar el sistema sin afectar datos reales</p>
+        </div>
+        <span class="badge badge-yellow">Solo pruebas</span>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-secondary" onclick="cargarDatosDemo()">
+          📥 Cargar Datos Demo
+        </button>
+        <button class="btn btn-danger" onclick="eliminarDatosDemo()">
+          🗑️ Eliminar Datos Demo
+        </button>
+      </div>
+      <div id="demo-status" style="margin-top:12px;font-size:0.78rem;color:var(--text2)"></div>
+    </div>
   </div>
 
 </main><!-- end main -->
