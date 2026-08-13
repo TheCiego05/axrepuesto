@@ -186,3 +186,147 @@ async function eliminarSecuencia(tipo) {
   showToast('Secuencia eliminada', 'info');
   cargarSecuencias();
 }
+
+// ============================================================
+// DATOS DEMO
+// ============================================================
+const DEMO_CLIENTES = [
+  { nombre:'Juan Carlos Pérez',   cedula:'001-1234567-8', telefono:'809-555-0101', email:'juan.perez@email.com',    direccion:'Calle Primera #12, Los Prados [DEMO]' },
+  { nombre:'María Rodríguez',     cedula:'001-2345678-9', telefono:'829-555-0102', email:'maria.rodriguez@email.com',direccion:'Av. 27 de Febrero #45, Piantini [DEMO]' },
+  { nombre:'Pedro Antonio Gómez', cedula:'001-3456789-0', telefono:'849-555-0103', email:'pedro.gomez@email.com',   direccion:'Calle Duarte #78, Santiago [DEMO]' },
+  { nombre:'Ana Martínez López',  cedula:'001-4567890-1', telefono:'809-555-0104', email:'ana.martinez@email.com',  direccion:'Av. Independencia #33, SD [DEMO]' },
+  { nombre:'Carlos Hernández',    cedula:'001-5678901-2', telefono:'829-555-0105', email:'carlos.h@email.com',      direccion:'Calle El Conde #21, Zona Colonial [DEMO]' },
+  { nombre:'Laura Jiménez',       cedula:'001-6789012-3', telefono:'849-555-0106', email:'laura.j@email.com',       direccion:'Av. Churchill #89, Bella Vista [DEMO]' },
+  { nombre:'Roberto Santos',      cedula:'001-7890123-4', telefono:'809-555-0107', email:'roberto.s@email.com',     direccion:'Calle Mella #56, Gazcue [DEMO]' },
+  { nombre:'Diana Vargas',        cedula:'001-8901234-5', telefono:'829-555-0108', email:'diana.v@email.com',       direccion:'Av. Tiradentes #12, Naco [DEMO]' },
+  { nombre:'Miguel Castillo',     cedula:'001-9012345-6', telefono:'849-555-0109', email:'miguel.c@email.com',      direccion:'Calle Las Flores #34, Arroyo Hondo [DEMO]' },
+  { nombre:'Sofía Torres',        cedula:'001-0123456-7', telefono:'809-555-0110', email:'sofia.t@email.com',       direccion:'Av. Luperón #67, Villa Mella [DEMO]' },
+];
+
+const DEMO_VEHICULOS = [
+  { marca:'Toyota',    modelo:'Corolla',   anio:'2019', placa:'A123456', color:'Plateado [DEMO]', tipo:'sedan' },
+  { marca:'Honda',     modelo:'Civic',     anio:'2021', placa:'B234567', color:'Blanco [DEMO]',   tipo:'sedan' },
+  { marca:'Nissan',    modelo:'Sentra',    anio:'2018', placa:'C345678', color:'Negro [DEMO]',     tipo:'sedan' },
+  { marca:'Hyundai',   modelo:'Tucson',    anio:'2020', placa:'D456789', color:'Azul [DEMO]',      tipo:'suv' },
+  { marca:'Kia',       modelo:'Sportage',  anio:'2022', placa:'E567890', color:'Rojo [DEMO]',      tipo:'suv' },
+  { marca:'Ford',      modelo:'Explorer',  anio:'2019', placa:'F678901', color:'Gris [DEMO]',      tipo:'suv' },
+  { marca:'Chevrolet', modelo:'Silverado', anio:'2021', placa:'G789012', color:'Negro [DEMO]',     tipo:'pickup' },
+  { marca:'Toyota',    modelo:'RAV4',      anio:'2020', placa:'H890123', color:'Blanco [DEMO]',    tipo:'suv' },
+  { marca:'Honda',     modelo:'CR-V',      anio:'2018', placa:'I901234', color:'Plateado [DEMO]',  tipo:'suv' },
+  { marca:'Mazda',     modelo:'CX-5',      anio:'2022', placa:'J012345', color:'Rojo [DEMO]',      tipo:'suv' },
+];
+
+const DEMO_ORDENES = [
+  { idx:0, mecanico:'Carlos Méndez',  estado_orden:'en_progreso',         prioridad:'alta',   sintomas:'Motor hace ruido al arrancar, humo por el escape',
+    arreglos:[{descripcion:'Cambio de aceite y filtro',estado:'listo',manoObra:800,repuestos:[]},{descripcion:'Revisión de escape y empaque de cabeza',estado:'en_proceso',manoObra:2500,repuestos:[]},{descripcion:'Limpieza de inyectores',estado:'en_proceso',manoObra:1200,repuestos:[]}]},
+  { idx:1, mecanico:'Luis Ramírez',   estado_orden:'en_diagnostico',      prioridad:'media',  sintomas:'Frenos hacen ruido, vibración en el volante',
+    arreglos:[{descripcion:'Diagnóstico sistema de frenos',estado:'en_proceso',manoObra:500,repuestos:[]},{descripcion:'Balanceo y alineación',estado:'en_proceso',manoObra:900,repuestos:[]}]},
+  { idx:2, mecanico:'Carlos Méndez',  estado_orden:'pendiente_aprobacion',prioridad:'normal', sintomas:'A/C no enfría, luz del motor encendida',
+    arreglos:[{descripcion:'Recarga de gas refrigerante A/C',estado:'en_proceso',manoObra:1500,repuestos:[]},{descripcion:'Diagnóstico OBD2',estado:'en_proceso',manoObra:600,repuestos:[]}]},
+  { idx:3, mecanico:'Pedro Sánchez',  estado_orden:'pendiente_pago',      prioridad:'normal', sintomas:'Batería descargada, revisión eléctrica',
+    arreglos:[{descripcion:'Cambio de batería 65 Amp',estado:'listo',manoObra:400,repuestos:[]},{descripcion:'Revisión sistema eléctrico',estado:'listo',manoObra:800,repuestos:[]},{descripcion:'Cambio de alternador',estado:'listo',manoObra:2000,repuestos:[]}]},
+  { idx:4, mecanico:'Luis Ramírez',   estado_orden:'cerrado',             prioridad:'normal', sintomas:'Mantenimiento preventivo 30,000 km',
+    arreglos:[{descripcion:'Cambio aceite sintético 5W-30',estado:'listo',manoObra:600,repuestos:[]},{descripcion:'Cambio filtros',estado:'listo',manoObra:400,repuestos:[]},{descripcion:'Revisión frenos',estado:'listo',manoObra:500,repuestos:[]}]},
+  { idx:5, mecanico:'Pedro Sánchez',  estado_orden:'en_progreso',         prioridad:'alta',   sintomas:'Transmisión resbalando, cambios bruscos',
+    arreglos:[{descripcion:'Cambio aceite transmisión',estado:'listo',manoObra:1800,repuestos:[]},{descripcion:'Ajuste de transmisión',estado:'en_proceso',manoObra:3500,repuestos:[]}]},
+  { idx:6, mecanico:'Carlos Méndez',  estado_orden:'borrador',            prioridad:'media',  sintomas:'Suspensión golpea en baches, dirección dura',
+    arreglos:[{descripcion:'Cambio amortiguadores delanteros',estado:'en_proceso',manoObra:2200,repuestos:[]},{descripcion:'Revisión rótulas',estado:'en_proceso',manoObra:1000,repuestos:[]}]},
+  { idx:7, mecanico:'Luis Ramírez',   estado_orden:'en_progreso',         prioridad:'media',  sintomas:'Check engine encendida, consumo alto',
+    arreglos:[{descripcion:'Escaneo OBD2',estado:'listo',manoObra:500,repuestos:[]},{descripcion:'Cambio bujías y cables',estado:'listo',manoObra:1200,repuestos:[]},{descripcion:'Limpieza cuerpo aceleración',estado:'en_proceso',manoObra:800,repuestos:[]}]},
+  { idx:8, mecanico:'Pedro Sánchez',  estado_orden:'pendiente_pago',      prioridad:'alta',   sintomas:'Accidente menor, parachoques y faro dañados',
+    arreglos:[{descripcion:'Cambio parachoques delantero',estado:'listo',manoObra:2800,repuestos:[]},{descripcion:'Cambio faro delantero',estado:'listo',manoObra:600,repuestos:[]},{descripcion:'Pintura y acabado',estado:'listo',manoObra:3500,repuestos:[]}]},
+  { idx:9, mecanico:'Carlos Méndez',  estado_orden:'en_diagnostico',      prioridad:'normal', sintomas:'Ruido al girar, vibración a alta velocidad',
+    arreglos:[{descripcion:'Inspección dirección',estado:'en_proceso',manoObra:500,repuestos:[]},{descripcion:'Balanceo de ruedas',estado:'en_proceso',manoObra:600,repuestos:[]}]},
+];
+
+async function cargarDatosDemo() {
+  const status = document.getElementById('demo-status');
+  status.innerHTML = '⏳ Cargando datos demo...';
+
+  try {
+    // Verificar si ya existen
+    const clientesExistentes = await dbGetAll('clientes');
+    const demoExistentes = clientesExistentes.filter(c => c.direccion?.includes('[DEMO]'));
+    if (demoExistentes.length > 0) {
+      status.innerHTML = '⚠️ Los datos demo ya están cargados. Elimínalos primero si quieres recargarlos.';
+      return;
+    }
+
+    // Insertar clientes
+    status.innerHTML = '⏳ Creando clientes...';
+    const clienteIds = [];
+    for (const c of DEMO_CLIENTES) {
+      const id = await dbAdd('clientes', c);
+      clienteIds.push(id);
+    }
+
+    // Insertar vehículos
+    status.innerHTML = '⏳ Creando vehículos...';
+    const vehiculoIds = [];
+    for (let i = 0; i < DEMO_VEHICULOS.length; i++) {
+      const id = await dbAdd('vehiculos', { ...DEMO_VEHICULOS[i], cliente_id: clienteIds[i] });
+      vehiculoIds.push(id);
+    }
+
+    // Insertar órdenes
+    status.innerHTML = '⏳ Creando órdenes de trabajo...';
+    for (const o of DEMO_ORDENES) {
+      const cli = DEMO_CLIENTES[o.idx];
+      const veh = DEMO_VEHICULOS[o.idx];
+      await dbAdd('ordenes', {
+        cliente_id:      clienteIds[o.idx],
+        vehiculo_id:     vehiculoIds[o.idx],
+        cliente_nombre:  cli.nombre,
+        vehiculo_placa:  veh.placa,
+        vehiculo_marca:  veh.marca,
+        vehiculo_modelo: veh.modelo,
+        mecanico:        o.mecanico,
+        estado_orden:    o.estado_orden,
+        prioridad:       o.prioridad,
+        sintomas:        o.sintomas,
+        notas:           'Orden de demostración [DEMO]',
+        arreglos:        o.arreglos,
+      });
+    }
+
+    status.innerHTML = '✅ <strong>Datos demo cargados:</strong> 10 clientes, 10 vehículos, 10 órdenes con diferentes estados.';
+    showToast('¡Datos demo cargados exitosamente!', 'success');
+    actualizarDashboard();
+
+  } catch(err) {
+    status.innerHTML = '❌ Error: ' + err.message;
+    showToast('Error cargando datos demo', 'error');
+  }
+}
+
+async function eliminarDatosDemo() {
+  if (!await confirmar('¿Eliminar todos los datos de demostración? Esta acción no se puede deshacer.')) return;
+  const status = document.getElementById('demo-status');
+  status.innerHTML = '⏳ Eliminando datos demo...';
+
+  try {
+    // Eliminar órdenes demo
+    const ordenes = await dbGetAll('ordenes');
+    for (const o of ordenes.filter(o => o.notas?.includes('[DEMO]'))) {
+      await dbDelete('ordenes', o.id);
+    }
+    // Eliminar vehículos demo
+    const vehiculos = await dbGetAll('vehiculos');
+    for (const v of vehiculos.filter(v => v.color?.includes('[DEMO]'))) {
+      await dbDelete('vehiculos', v.id);
+    }
+    // Eliminar clientes demo
+    const clientes = await dbGetAll('clientes');
+    for (const c of clientes.filter(c => c.direccion?.includes('[DEMO]'))) {
+      await dbDelete('clientes', c.id);
+    }
+
+    status.innerHTML = '✅ Datos demo eliminados correctamente.';
+    showToast('Datos demo eliminados', 'info');
+    actualizarDashboard();
+
+  } catch(err) {
+    status.innerHTML = '❌ Error: ' + err.message;
+    showToast('Error eliminando datos demo', 'error');
+  }
+}
