@@ -136,7 +136,11 @@ async function eliminarArreglo(ordenId, idx) {
 
 async function abrirModalOrden() {
   ordenEditId = null; arreglosTemp = [];
-  document.getElementById('form-orden').reset();
+  // Limpiar campos manualmente (es un div, no un form)
+  ['ord-cliente','ord-vehiculo','ord-mecanico','ord-prioridad','ord-km','ord-estado-inicial','ord-sintomas','ord-notas'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.tagName === 'SELECT' ? el.selectedIndex = 0 : el.value = ''; }
+  });
   document.getElementById('orden-modal-titulo').textContent = 'Nueva Orden de Trabajo';
   await poblarSelectCliente('ord-cliente');
   document.getElementById('ord-vehiculo').innerHTML = '<option value="">— Seleccione cliente —</option>';
@@ -179,7 +183,10 @@ async function cargarVehiculosOrden(clienteId) {
 }
 
 function abrirFormArreglo() {
-  document.getElementById('form-arreglo-temp').reset();
+  ['at-descripcion','at-mano-obra','at-notas'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = id === 'at-mano-obra' ? '0' : '';
+  });
   abrirModal('modal-arreglo-temp');
 }
 
@@ -253,7 +260,10 @@ async function guardarOrden() {
 
 async function abrirModalArreglo(ordenId) {
   ordenArregloId = ordenId;
-  document.getElementById('form-arreglo-existente').reset();
+  ['are-descripcion','are-mano-obra','are-notas','are-cantidad'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = id === 'are-mano-obra' ? '0' : id === 'are-cantidad' ? '1' : '';
+  });
   const repuestos = await dbGetAll('repuestos');
   const sel = document.getElementById('are-repuesto');
   sel.innerHTML = '<option value="">— Sin repuesto —</option>' +
