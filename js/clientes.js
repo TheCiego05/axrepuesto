@@ -38,7 +38,7 @@ async function cargarClientes(busqueda = '') {
 function abrirModalCliente(id = null) {
   clienteEditId = id;
   document.getElementById('modal-cliente-titulo').textContent = id ? 'Editar Cliente' : 'Nuevo Cliente';
-  document.getElementById('form-cliente').reset();
+  document.querySelectorAll('#form-cliente input, #form-cliente select, #form-cliente textarea').forEach(el => { if(el.type !== 'checkbox') el.value = ''; else el.checked = false; });
   if (!id) { abrirModal('modal-cliente'); return; }
   dbGet('clientes', id).then(c => {
     document.getElementById('cli-nombre').value = c.nombre || '';
@@ -117,7 +117,7 @@ async function cargarVehiculos(clienteId) {
 function abrirModalVehiculo(id = null) {
   vehiculoEditId = id;
   document.getElementById('modal-vehiculo-titulo').textContent = id ? 'Editar Vehículo' : 'Nuevo Vehículo';
-  document.getElementById('form-vehiculo').reset();
+  document.querySelectorAll('#form-vehiculo input, #form-vehiculo select, #form-vehiculo textarea').forEach(el => { if(el.type !== 'checkbox') el.value = ''; else el.checked = false; });
   if (!id) { abrirModal('modal-vehiculo'); return; }
   dbGet('vehiculos', id).then(v => {
     document.getElementById('veh-marca').value = v.marca || '';

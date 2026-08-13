@@ -93,7 +93,7 @@ let turnoEditId = null;
 async function abrirModalTurno(id = null) {
   turnoEditId = id;
   document.getElementById('turno-modal-titulo').textContent = id ? 'Editar Turno' : 'Nuevo Turno';
-  document.getElementById('form-turno').reset();
+  document.querySelectorAll('#form-turno input, #form-turno select, #form-turno textarea').forEach(el => { if(el.type !== 'checkbox') el.value = ''; else el.checked = false; });
   document.getElementById('turno-fecha').value = document.getElementById('agenda-fecha')?.value || new Date().toISOString().split('T')[0];
 
   await poblarSelectClienteTurno();
