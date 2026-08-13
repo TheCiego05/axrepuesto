@@ -112,7 +112,7 @@ let secuenciaEditTipo = null;
 async function abrirModalSecuencia(tipo = null) {
   secuenciaEditTipo = tipo;
   document.getElementById('modal-seq-titulo').textContent = tipo ? 'Editar Secuencia' : 'Nueva Secuencia';
-  document.getElementById('form-secuencia').reset();
+  document.querySelectorAll('#form-secuencia input, #form-secuencia select, #form-secuencia textarea').forEach(el => { if(el.type==='checkbox') el.checked=false; else if(el.type==='number') el.value=el.defaultValue||'0'; else el.value=''; });
 
   // Poblar select de tipos
   const existentes = await dbGetAll('secuencias');
