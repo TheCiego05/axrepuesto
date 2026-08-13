@@ -5,7 +5,7 @@
 
 // ⚠️ CONFIGURAR ANTES DE USAR:
 const SUPABASE_URL  = 'https://jzomiywgrnpflakblnlh.supabase.co';
-const SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp6b21peXdncm5wZmxha2JsbmxoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY1NzkyODcsImV4cCI6MjEwMjE1NTI4N30.1sw15auGufaKIcUiW317knzB0hksoyS-BDhx7KZZWew'; // Settings → API → anon public
+const SUPABASE_KEY  = 'TU_ANON_KEY_AQUI'; // Settings → API → anon public
 
 let _supabase = null;
 

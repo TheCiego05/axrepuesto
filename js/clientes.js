@@ -162,3 +162,56 @@ async function eliminarVehiculo(id) {
   showToast('Vehículo eliminado', 'info');
   cargarVehiculos(vehiculoClienteId);
 }
+
+// ---- TABS DEL MODAL CLIENTE ----
+function switchClienteTab(tab) {
+  document.getElementById('cli-tab-datos').style.display     = tab === 'datos' ? 'block' : 'none';
+  document.getElementById('cli-tab-vehiculos').style.display = tab === 'vehiculos' ? 'block' : 'none';
+  document.querySelectorAll('#cli-tabs .tab-btn').forEach((b,i) => {
+    b.classList.toggle('active', (i===0 && tab==='datos') || (i===1 && tab==='vehiculos'));
+  });
+  if (tab === 'vehiculos' && clienteEditId) {
+    cargarVehiculosEnModal(clienteEditId);
+  }
+}
+
+async function cargarVehiculosEnModal(clienteId) {
+  const vehiculos = await dbGetByIndex('vehiculos', 'cliente_id', clienteId);
+  const lista = document.getElementById('cli-vehiculos-lista');
+  if (!lista) return;
+
+  if (!vehiculos.length) {
+    lista.innerHTML = `<div class="empty-state"><div class="ico">🚗</div><h3>Sin vehículos</h3><p>Este cliente no tiene vehículos registrados</p></div>`;
+    return;
+  }
+
+  lista.innerHTML = vehiculos.map(v => `
+    <div class="arreglo-item" style="margin-bottom:8px">
+      <div style="font-size:1.5rem;flex-shrink:0">🚗</div>
+      <div class="arreglo-desc" style="flex:1">
+        <strong>${v.marca} ${v.modelo} ${v.anio || ''}</strong>
+        <span>
+          ${v.placa ? `<span class="badge badge-blue" style="margin-right:4px">🪪 ${v.placa}</span>` : ''}
+          ${v.color ? `Color: ${v.color}` : ''}
+          ${v.vin ? `· VIN: <span class="mono" style="font-size:0.68rem">${v.vin}</span>` : ''}
+        </span>
+        ${v.tipo ? `<span style="font-size:0.7rem;color:var(--text2)">${tipoVehiculoLabel(v.tipo)}</span>` : ''}
+      </div>
+      <div class="arreglo-actions">
+        <button class="btn btn-xs btn-ghost" onclick="editarVehiculo(${v.id})">✏️</button>
+        <button class="btn btn-xs btn-danger" onclick="eliminarVehiculoEnModal(${v.id})">🗑️</button>
+      </div>
+    </div>`).join('');
+}
+
+function tipoVehiculoLabel(tipo) {
+  const map = { sedan:'Sedán', suv:'SUV/Jeep', pickup:'Pick-up', hatchback:'Hatchback', minivan:'Minivan', moto:'Motocicleta', camion:'Camión', otro:'Otro' };
+  return map[tipo] || tipo;
+}
+
+async function eliminarVehiculoEnModal(id) {
+  if (!await confirmar('¿Eliminar este vehículo?')) return;
+  await dbDelete('vehiculos', id);
+  showToast('Vehículo eliminado', 'info');
+  cargarVehiculosEnModal(clienteEditId);
+}
