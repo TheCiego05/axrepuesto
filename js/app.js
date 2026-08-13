@@ -33,6 +33,7 @@ function navegarA(pagina) {
     case 'config':     cargarConfig(); break;
     case 'usuarios':   cargarUsuarios(); break;
     case 'asistente':  cargarApiKeyIA(); break;
+    case 'agenda':     cargarAgenda(); break;
   }
 }
 
@@ -50,10 +51,17 @@ async function actualizarDashboard() {
   const porCobrar = cobros.filter(c => c.estado !== 'pagado')
                           .reduce((s,c) => s + (parseFloat(c.monto_pendiente)||0), 0);
 
-  document.getElementById('dash-ordenes').textContent    = activas.length;
+  const enTaller = ordenes.filter(o => o.estado_orden === 'en_taller').length;
+  const listos   = ordenes.filter(o => o.estado_orden === 'listo').length;
+
+  document.getElementById('dash-ordenes').textContent    = enTaller;
   document.getElementById('dash-ingresos').textContent   = formatMoney(totalHoy);
   document.getElementById('dash-por-cobrar').textContent = formatMoney(porCobrar);
   document.getElementById('dash-stock').textContent      = stockBajo.length;
+
+  // Update stat card subs
+  const subOrdenes = document.querySelector('#dash-ordenes')?.closest('.stat-card')?.querySelector('.sub');
+  if (subOrdenes) subOrdenes.textContent = `${listos} listo(s) · ${activas.length} activas`;
 
   // Mini kanban en dashboard
   const estadosDash = [
@@ -194,3 +202,16 @@ function guardarApiKeyIA() {
 }
 
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
+
+function cambiarDiaAgenda(dias) {
+  const input = document.getElementById('agenda-fecha');
+  if (!input) return;
+  if (dias === 0) {
+    input.value = new Date().toISOString().split('T')[0];
+  } else {
+    const d = new Date(input.value || new Date());
+    d.setDate(d.getDate() + dias);
+    input.value = d.toISOString().split('T')[0];
+  }
+  cargarAgenda(input.value);
+}

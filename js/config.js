@@ -27,6 +27,7 @@ async function cargarConfig() {
 
   await cargarSecuencias();
   await cargarConfigECF();
+  await cargarMetodosPagoConfig();
 }
 
 async function guardarConfigNegocio() {
@@ -415,4 +416,51 @@ function cambiarFormatoECF() {
   if (!e32row || !b01row) return;
   e32row.style.display = (formato === 'NCF') ? 'none' : 'flex';
   b01row.style.display = (formato === 'eCF') ? 'none' : 'flex';
+}
+
+// ============================================================
+// MÉTODOS DE PAGO
+// ============================================================
+async function cargarMetodosPagoConfig() {
+  const metodos = await dbGetAll('metodos_pago');
+  const lista = document.getElementById('metodos-pago-lista');
+  if (!lista) return;
+
+  if (!metodos.length) {
+    lista.innerHTML = '<p class="text-sm text-muted">Sin métodos configurados</p>';
+    return;
+  }
+
+  const sorted = metodos.sort((a,b) => a.orden - b.orden);
+  lista.innerHTML = sorted.map(m => `
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+      <span style="font-size:1.2rem">${m.icono}</span>
+      <span style="flex:1;font-size:0.83rem;font-weight:500">${m.nombre}</span>
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.75rem">
+        <input type="checkbox" ${m.activo?'checked':''} onchange="toggleMetodoPago(${m.id},this.checked)" style="accent-color:var(--red)">
+        Activo
+      </label>
+      <button class="btn btn-xs btn-danger" onclick="eliminarMetodoPago(${m.id})">🗑️</button>
+    </div>`).join('');
+}
+
+async function toggleMetodoPago(id, activo) {
+  const m = await dbGet('metodos_pago', id);
+  await dbUpdate('metodos_pago', { ...m, activo });
+  showToast(activo ? 'Método activado' : 'Método desactivado', 'info');
+}
+
+async function eliminarMetodoPago(id) {
+  if (!await confirmar('¿Eliminar este método de pago?')) return;
+  await dbDelete('metodos_pago', id);
+  cargarMetodosPagoConfig();
+}
+
+async function agregarMetodoPago() {
+  const nombre = prompt('Nombre del método de pago:');
+  if (!nombre?.trim()) return;
+  const icono = prompt('Emoji/ícono (ej: 💵):', '💳') || '💳';
+  await dbAdd('metodos_pago', { nombre: nombre.trim(), icono, activo: true, orden: 99 });
+  showToast('Método agregado', 'success');
+  cargarMetodosPagoConfig();
 }
