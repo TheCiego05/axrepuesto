@@ -7,7 +7,6 @@
   <title>Llave10 — Sistema de Gestión para Talleres</title>
   <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="css/styles.css">
-  <link rel="stylesheet" href="css/extra.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -16,7 +15,10 @@
 <div id="login-screen" class="login-screen">
   <div class="login-box">
     <div class="login-logo">
-      <h1>🔧 Llave10</h1>
+      <div class="login-logo-icon">
+        <svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
+      </div>
+      <h1>Llave10</h1>
       <p>Sistema de Gestión para Talleres · by Axentia</p>
     </div>
     <div class="form-grid">
@@ -41,57 +43,64 @@
 <!-- SIDEBAR -->
 <nav id="sidebar">
   <div class="sidebar-logo">
-    <h1>🔧 Llave10</h1>
-    <p>by Axentia</p>
+    <div class="logo-brand">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
+      </div>
+      <div class="logo-text">
+        <h1>Llave10</h1>
+        <p>by Axentia</p>
+      </div>
+    </div>
   </div>
 
   <div class="nav-section">
     <div class="nav-label">Principal</div>
     <div class="nav-item active" data-page="dashboard" onclick="navegarA('dashboard')">
-      <span class="icon">📊</span> Dashboard
+      <div class="nav-dot"></div> Dashboard
     </div>
   </div>
 
   <div class="nav-section">
     <div class="nav-label">Operaciones</div>
     <div class="nav-item" data-page="ordenes" onclick="navegarA('ordenes')">
-      <span class="icon">📝</span> Órdenes de Trabajo
+      <div class="nav-dot"></div> Órdenes de Trabajo
     </div>
     <div class="nav-item" data-page="facturas" onclick="navegarA('facturas')">
-      <span class="icon">🧾</span> Facturas
+      <div class="nav-dot"></div> Facturas
     </div>
     <div class="nav-item" data-page="cobros" onclick="navegarA('cobros')">
-      <span class="icon">💰</span> Cuentas por Cobrar
+      <div class="nav-dot"></div> Cuentas por Cobrar
     </div>
   </div>
 
   <div class="nav-section">
     <div class="nav-label">Catálogos</div>
     <div class="nav-item" data-page="clientes" onclick="navegarA('clientes')">
-      <span class="icon">👥</span> Clientes
+      <div class="nav-dot"></div> Clientes
     </div>
     <div class="nav-item" data-page="inventario" onclick="navegarA('inventario')">
-      <span class="icon">📦</span> Inventario
+      <div class="nav-dot"></div> Inventario
     </div>
   </div>
 
   <div class="nav-section">
     <div class="nav-label">Análisis</div>
     <div class="nav-item" data-page="reportes" onclick="navegarA('reportes')">
-      <span class="icon">📈</span> Reportes
+      <div class="nav-dot"></div> Reportes
     </div>
     <div class="nav-item" data-page="asistente" onclick="navegarA('asistente')">
-      <span class="icon">🤖</span> Asistente IA
+      <div class="nav-dot"></div> Asistente IA
     </div>
   </div>
 
   <div class="nav-section">
     <div class="nav-label">Sistema</div>
     <div class="nav-item" data-page="usuarios" onclick="navegarA('usuarios')">
-      <span class="icon">👤</span> Usuarios
+      <div class="nav-dot"></div> Usuarios
     </div>
     <div class="nav-item" data-page="config" onclick="navegarA('config')">
-      <span class="icon">⚙️</span> Configuración
+      <div class="nav-dot"></div> Configuración
     </div>
   </div>
 
@@ -99,7 +108,7 @@
     <div class="user-badge" id="user-badge"></div>
     <button class="btn btn-ghost w-full" style="font-size:0.75rem" onclick="logout()">🚪 Cerrar Sesión</button>
     <button class="btn-install" id="btn-install" onclick="instalarApp()">⬇️ Instalar App</button>
-    <p style="font-size:0.62rem;color:var(--text2);text-align:center;margin-top:6px">Llave10 v1.0 · Axentia</p>
+    <p class="sidebar-ver" style="margin-top:6px">Llave10 v1.0 · Axentia</p>
   </div>
 </nav>
 
@@ -108,7 +117,7 @@
 
   <!-- ─── DASHBOARD ─── -->
   <div class="page active" id="page-dashboard">
-    <div class="page-header">
+    <div class="page-topbar">
       <div><h2>📊 Dashboard</h2><p>Resumen gerencial del taller</p></div>
       <button class="btn btn-primary" onclick="navegarA('ordenes');setTimeout(abrirModalOrden,200)">+ Nueva Orden</button>
     </div>
@@ -136,7 +145,7 @@
 
   <!-- ─── ÓRDENES ─── -->
   <div class="page" id="page-ordenes">
-    <div class="page-header">
+    <div class="page-topbar">
       <div><h2>📝 Órdenes de Trabajo</h2><p>Gestión completa de reparaciones</p></div>
       <button class="btn btn-primary" onclick="abrirModalOrden()">+ Nueva Orden</button>
     </div>
@@ -165,7 +174,7 @@
 
   <!-- ─── CLIENTES ─── -->
   <div class="page" id="page-clientes">
-    <div class="page-header">
+    <div class="page-topbar">
       <div><h2>👥 Clientes</h2><p>Gestión de clientes</p></div>
       <button class="btn btn-primary" onclick="abrirModalCliente()">+ Nuevo Cliente</button>
     </div>
@@ -178,7 +187,7 @@
 
   <!-- ─── INVENTARIO ─── -->
   <div class="page" id="page-inventario">
-    <div class="page-header">
+    <div class="page-topbar">
       <div><h2>📦 Inventario</h2><p>Repuestos y piezas</p></div>
       <button class="btn btn-primary" onclick="abrirModalRepuesto()">+ Nuevo Repuesto</button>
     </div>
@@ -191,7 +200,7 @@
 
   <!-- ─── FACTURAS ─── -->
   <div class="page" id="page-facturas">
-    <div class="page-header">
+    <div class="page-topbar">
       <div><h2>🧾 Facturas</h2><p>Historial de facturación</p></div>
       <button class="btn btn-ghost" onclick="exportarReporteCSV('facturas')">⬇️ Exportar CSV</button>
     </div>
@@ -204,7 +213,7 @@
 
   <!-- ─── COBROS ─── -->
   <div class="page" id="page-cobros">
-    <div class="page-header">
+    <div class="page-topbar">
       <div><h2>💰 Cuentas por Cobrar</h2><p>Seguimiento de pagos pendientes</p></div>
       <div style="text-align:right">
         <div class="text-muted text-xs">Total pendiente</div>
@@ -219,7 +228,7 @@
 
   <!-- ─── REPORTES ─── -->
   <div class="page" id="page-reportes">
-    <div class="page-header">
+    <div class="page-topbar">
       <div><h2>📈 Reportes</h2><p>Dashboard gerencial</p></div>
       <select class="form-control" style="width:160px" onchange="generarResumenPeriodo(this.value)">
         <option value="7">Últimos 7 días</option>
@@ -275,7 +284,7 @@
 
   <!-- ─── ASISTENTE IA ─── -->
   <div class="page" id="page-asistente">
-    <div class="page-header">
+    <div class="page-topbar">
       <div><h2>🤖 Asistente IA</h2><p>Diagnósticos, mantenimiento y checklists técnicos</p></div>
       <button class="btn btn-ghost" onclick="limpiarChatIA()">🗑️ Limpiar chat</button>
     </div>
@@ -314,7 +323,7 @@
 
   <!-- ─── USUARIOS ─── -->
   <div class="page" id="page-usuarios">
-    <div class="page-header">
+    <div class="page-topbar">
       <div><h2>👤 Usuarios</h2><p>Gestión de accesos y roles</p></div>
       <button class="btn btn-primary" onclick="abrirModalUsuario()">+ Nuevo Usuario</button>
     </div>
@@ -326,7 +335,7 @@
 
   <!-- ─── CONFIGURACIÓN ─── -->
   <div class="page" id="page-config">
-    <div class="page-header"><div><h2>⚙️ Configuración</h2><p>Datos del negocio y comprobantes</p></div></div>
+    <div class="page-topbar"><div><h2>⚙️ Configuración</h2><p>Datos del negocio y comprobantes</p></div></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
       <div class="table-wrap" style="padding:20px">
         <h3 style="margin-bottom:16px;font-size:1rem">🏪 Datos del Negocio</h3>
