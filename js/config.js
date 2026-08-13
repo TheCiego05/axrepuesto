@@ -26,6 +26,7 @@ async function cargarConfig() {
   document.getElementById('cfg-itbis').value     = await getConfig('itbis') || '18';
 
   await cargarSecuencias();
+  await cargarConfigECF();
 }
 
 async function guardarConfigNegocio() {
@@ -329,4 +330,89 @@ async function eliminarDatosDemo() {
     status.innerHTML = '❌ Error: ' + err.message;
     showToast('Error eliminando datos demo', 'error');
   }
+}
+
+// ============================================================
+// CONFIGURACIÓN e-CF / FACTURACIÓN ELECTRÓNICA
+// ============================================================
+
+async function cargarConfigECF() {
+  const rnc       = await getConfig('ecf_rnc') || '';
+  const razon     = await getConfig('ecf_razon') || '';
+  const formato   = await getConfig('ecf_formato') || 'eCF';
+  const entorno   = await getConfig('ecf_entorno') || 'test';
+  const siguiente = await getConfig('ecf_siguiente') || '1';
+  const sigB01    = await getConfig('ecf_siguiente_b01') || '1';
+  const habilitado= await getConfig('ecf_habilitado') || 'false';
+
+  if (document.getElementById('ecf-rnc'))         document.getElementById('ecf-rnc').value         = rnc;
+  if (document.getElementById('ecf-razon'))        document.getElementById('ecf-razon').value        = razon;
+  if (document.getElementById('ecf-formato'))      document.getElementById('ecf-formato').value      = formato;
+  if (document.getElementById('ecf-entorno'))      document.getElementById('ecf-entorno').value      = entorno;
+  if (document.getElementById('ecf-siguiente'))    document.getElementById('ecf-siguiente').value    = siguiente;
+  if (document.getElementById('ecf-siguiente-b01'))document.getElementById('ecf-siguiente-b01').value= sigB01;
+  if (document.getElementById('ecf-habilitado'))   document.getElementById('ecf-habilitado').checked = habilitado === 'true';
+
+  // Actualizar mensaje de estado
+  const msg = document.getElementById('ecf-status-msg');
+  if (msg) {
+    if (rnc && habilitado === 'true') {
+      msg.innerHTML = '✅ Facturación electrónica configurada y activa.';
+      msg.style.borderLeftColor = 'var(--green)';
+      msg.style.color = 'var(--green)';
+    } else if (rnc) {
+      msg.innerHTML = '⚙️ Configuración guardada pero no activada. Marca la casilla para habilitar.';
+      msg.style.borderLeftColor = 'var(--yellow)';
+    } else {
+      msg.innerHTML = '⚠️ Todavía no has configurado la facturación electrónica.';
+    }
+  }
+}
+
+async function guardarConfigECF() {
+  const rnc       = document.getElementById('ecf-rnc')?.value.trim() || '';
+  const razon     = document.getElementById('ecf-razon')?.value.trim() || '';
+  const formato   = document.getElementById('ecf-formato')?.value || 'eCF';
+  const entorno   = document.getElementById('ecf-entorno')?.value || 'test';
+  const siguiente = document.getElementById('ecf-siguiente')?.value || '1';
+  const sigB01    = document.getElementById('ecf-siguiente-b01')?.value || '1';
+  const habilitado= document.getElementById('ecf-habilitado')?.checked ? 'true' : 'false';
+
+  if (!rnc) { showToast('El RNC es requerido', 'error'); return; }
+
+  await setConfig('ecf_rnc',           rnc);
+  await setConfig('ecf_razon',         razon);
+  await setConfig('ecf_formato',       formato);
+  await setConfig('ecf_entorno',       entorno);
+  await setConfig('ecf_siguiente',     siguiente);
+  await setConfig('ecf_siguiente_b01', sigB01);
+  await setConfig('ecf_habilitado',    habilitado);
+
+  // Crear secuencias automáticamente según el formato
+  if (formato === 'eCF' || formato === 'ambos') {
+    await dbUpdate('secuencias', {
+      tipo: 'e32', nombre: 'Consumidor Final', formato: 'eCF',
+      desde: parseInt(siguiente), hasta: parseInt(siguiente) + 999,
+      actual: parseInt(siguiente), activa: habilitado === 'true'
+    });
+  }
+  if (formato === 'NCF' || formato === 'ambos') {
+    await dbUpdate('secuencias', {
+      tipo: 'B01', nombre: 'Crédito Fiscal', formato: 'NCF',
+      desde: parseInt(sigB01), hasta: parseInt(sigB01) + 999,
+      actual: parseInt(sigB01), activa: habilitado === 'true'
+    });
+  }
+
+  showToast('Configuración de e-CF guardada', 'success');
+  cargarConfigECF();
+}
+
+function cambiarFormatoECF() {
+  const formato = document.getElementById('ecf-formato')?.value;
+  const e32row = document.getElementById('ecf-siguiente')?.closest('.form-group');
+  const b01row = document.getElementById('ecf-siguiente-b01')?.closest('.form-group');
+  if (!e32row || !b01row) return;
+  e32row.style.display = (formato === 'NCF') ? 'none' : 'flex';
+  b01row.style.display = (formato === 'eCF') ? 'none' : 'flex';
 }

@@ -6,14 +6,10 @@ let arreglosTemp = [];
 let ordenArregloId = null;
 
 const ESTADOS_ORDEN = [
-  { key:'borrador',             label:'📋 Borrador',         cls:'badge-gray' },
-  { key:'en_diagnostico',       label:'🔍 Diagnóstico',      cls:'badge-blue' },
-  { key:'pendiente_aprobacion', label:'⏳ Por Aprobar',      cls:'badge-yellow' },
-  { key:'en_progreso',          label:'🔧 En Progreso',      cls:'badge-yellow' },
-  { key:'pendiente_pago',       label:'💳 Pendiente Pago',   cls:'badge-purple' },
-  { key:'cerrado',              label:'✅ Cerrado',           cls:'badge-green' },
-  { key:'cancelado',            label:'❌ Cancelado',         cls:'badge-red' },
-  { key:'descartado',           label:'🗑️ Descartado',       cls:'badge-gray' },
+  { key:'recibido',   label:'🔵 Recibido',   cls:'badge-blue' },
+  { key:'en_taller',  label:'🔧 En Taller',  cls:'badge-yellow' },
+  { key:'listo',      label:'✅ Listo',       cls:'badge-green' },
+  { key:'entregado',  label:'🚗 Entregado',  cls:'badge-gray' },
 ];
 
 async function cargarOrdenes(busqueda='', filtroEstado='') {
@@ -41,12 +37,12 @@ async function cargarOrdenes(busqueda='', filtroEstado='') {
     const totalArr    = arreglos.length;
     const listos      = arreglos.filter(a => a.estado === 'listo').length;
     const todosListos = totalArr > 0 && listos === totalArr;
-    const puedeFacturar = (todosListos || o.estado_orden === 'en_progreso') && o.estado_orden !== 'cerrado';
+    const puedeFacturar = o.estado_orden === 'listo';
     return `
     <div class="orden-card">
       <div class="orden-header" onclick="toggleOrden(${o.id})">
         <div class="orden-info">
-          <h4>🚗 ${o.vehiculo_marca||''} ${o.vehiculo_modelo||''} — <span class="mono">Placa: ${o.vehiculo_placa||'—'}</span>
+          <h4>🚗 ${o.vehiculo_marca||''} ${o.vehiculo_modelo||''} ${o.vehiculo_anio||''} <span class="mono" style="font-size:0.72rem;color:var(--text2)">· ${o.vehiculo_placa||'—'}</span>
             <span class="prioridad-${o.prioridad}" style="font-size:0.72rem;margin-left:6px">${iconPrioridad(o.prioridad)}</span>
           </h4>
           <p>👤 ${o.cliente_nombre||'—'} · 📅 ${formatDate(o.creado_en)} · ${totalArr} arreglo(s), ${listos} listo(s)${o.mecanico?' · 🔧 '+o.mecanico:''}</p>
@@ -56,7 +52,7 @@ async function cargarOrdenes(busqueda='', filtroEstado='') {
           <select class="form-control" style="width:160px;font-size:0.72rem;padding:4px 6px" onchange="event.stopPropagation();cambiarEstadoOrden(${o.id},this.value)" onclick="event.stopPropagation()">
             ${ESTADOS_ORDEN.map(e => `<option value="${e.key}" ${o.estado_orden===e.key?'selected':''}>${e.label}</option>`).join('')}
           </select>
-          ${puedeFacturar ? `<button class="btn btn-sm btn-primary" onclick="event.stopPropagation();facturarOrden(${o.id})">🧾 Facturar</button>` : ''}
+          ${o.estado_orden === 'listo' || o.estado_orden === 'entregado' ? `<button class="btn btn-sm btn-primary" onclick="event.stopPropagation();facturarOrden(${o.id})">🧾 Facturar</button>` : ''}
           <button class="btn btn-sm btn-ghost" onclick="event.stopPropagation();editarOrden(${o.id})">✏️</button>
           <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();eliminarOrden(${o.id})">🗑️</button>
         </div>
@@ -122,9 +118,9 @@ async function cambiarEstadoOrden(ordenId, nuevoEstado) {
 async function cambiarEstadoArreglo(ordenId, idx, nuevoEstado) {
   const orden = await dbGet('ordenes', ordenId);
   orden.arreglos[idx].estado = nuevoEstado;
-  // Si todos listos, sugerir mover a pendiente_pago
+  // Si todos los arreglos están listos, avanzar orden a listo
   const todos = orden.arreglos.every(a => a.estado === 'listo');
-  if (todos && orden.estado_orden === 'en_progreso') orden.estado_orden = 'pendiente_pago';
+  if (todos && orden.estado_orden === 'en_taller') orden.estado_orden = 'listo';
   await dbUpdate('ordenes', orden);
   cargarOrdenes();
   showToast('Estado actualizado', 'success');

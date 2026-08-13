@@ -134,7 +134,7 @@
     </div>
     <div class="table-wrap">
       <div style="padding:14px 16px;border-bottom:1px solid var(--border)"><strong style="font-size:0.9rem">Órdenes Recientes</strong></div>
-      <table><thead><tr><th>#</th><th>Cliente</th><th>Vehículo</th><th>Estado</th><th>Prioridad</th><th></th></tr></thead>
+      <table><thead><tr><th>#</th><th>Cliente</th><th>Vehículo</th><th>Estado</th><th>Prior.</th><th></th></tr></thead>
       <tbody id="dash-ordenes-list"><tr><td colspan="6" style="padding:20px;text-align:center;color:var(--text2)">Sin órdenes</td></tr></tbody>
       </table>
     </div>
@@ -148,15 +148,12 @@
     </div>
     <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
       <input class="search-input" style="flex:1;min-width:200px" placeholder="Buscar por cliente, placa..." oninput="cargarOrdenes(this.value, document.getElementById('filtro-estado').value)">
-      <select id="filtro-estado" class="form-control" style="width:200px" onchange="cargarOrdenes(document.querySelector('#page-ordenes .search-input').value,this.value)">
+      <select id="filtro-estado" class="form-control" style="width:180px" onchange="cargarOrdenes(document.querySelector('#page-ordenes .search-input').value,this.value)">
         <option value="">Todos los estados</option>
-        <option value="borrador">📋 Borrador / Presupuesto</option>
-        <option value="en_diagnostico">🔍 En Diagnóstico</option>
-        <option value="pendiente_aprobacion">⏳ Pendiente Aprobación</option>
-        <option value="en_progreso">🔧 En Progreso</option>
-        <option value="pendiente_pago">💳 Pendiente de Pago</option>
-        <option value="cerrado">✅ Cerrado</option>
-        <option value="cancelado">❌ Cancelado</option>
+        <option value="recibido">🔵 Recibido</option>
+        <option value="en_taller">🔧 En Taller</option>
+        <option value="listo">✅ Listo</option>
+        <option value="entregado">🚗 Entregado</option>
       </select>
       <div style="display:flex;gap:6px">
         <button class="btn btn-sm btn-ghost" onclick="toggleVistaOrdenes('lista')" id="btn-vista-lista">☰ Lista</button>
@@ -352,6 +349,70 @@
         </div>
         <div id="secuencias-lista"></div>
       </div>
+    </div>
+
+    <!-- FACTURACIÓN ELECTRÓNICA e-CF -->
+    <div class="table-wrap" style="padding:24px;margin-top:20px">
+      <h3 style="font-size:1rem;margin-bottom:6px">🧾 Facturación Electrónica (e-CF / DGII)</h3>
+      <p style="font-size:0.78rem;color:var(--text2);margin-bottom:16px;line-height:1.6">
+        Emite tus facturas como Comprobante Fiscal Electrónico ante la DGII. Necesitas tu RNC,
+        tu certificado de firma digital y las secuencias autorizadas. Mientras no completes esta
+        configuración, la facturación sigue funcionando igual que siempre, sin e-CF.
+      </p>
+
+      <div id="ecf-status-msg" style="font-size:0.78rem;color:var(--text2);margin-bottom:16px;padding:10px 14px;background:var(--bg3);border-radius:8px;border-left:3px solid var(--border2)">
+        ⚠️ Todavía no has configurado la facturación electrónica.
+      </div>
+
+      <div class="form-grid form-grid-2" style="margin-bottom:16px">
+        <div class="form-group">
+          <label>RNC del Negocio</label>
+          <input id="ecf-rnc" class="form-control" placeholder="Ej. 130000000">
+        </div>
+        <div class="form-group">
+          <label>Razón Social</label>
+          <input id="ecf-razon" class="form-control" placeholder="Nombre legal del negocio">
+        </div>
+        <div class="form-group">
+          <label>Formato de Comprobante</label>
+          <select id="ecf-formato" class="form-control" onchange="cambiarFormatoECF()">
+            <option value="eCF">e-CF Electrónico (E31, E32...)</option>
+            <option value="NCF">NCF Físico (B01, B02...)</option>
+            <option value="ambos">Ambos formatos</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Entorno</label>
+          <select id="ecf-entorno" class="form-control">
+            <option value="test">🧪 Test (pruebas, sin validez fiscal)</option>
+            <option value="produccion">✅ Producción (válido ante DGII)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Siguiente número e-CF (E32...)</label>
+          <input id="ecf-siguiente" class="form-control" type="number" value="1" min="1">
+          <span style="font-size:0.68rem;color:var(--text2);margin-top:3px;display:block">El primer número de tu rango autorizado por la DGII para Factura de Consumidor Final (E32). Se incrementa con cada e-CF emitido.</span>
+        </div>
+        <div class="form-group">
+          <label>Siguiente NCF Crédito Fiscal (B01...)</label>
+          <input id="ecf-siguiente-b01" class="form-control" type="number" value="1" min="1">
+          <span style="font-size:0.68rem;color:var(--text2);margin-top:3px;display:block">Número inicial de tu secuencia B01 autorizada para crédito fiscal.</span>
+        </div>
+      </div>
+
+      <div style="margin-bottom:16px">
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:0.83rem">
+          <input type="checkbox" id="ecf-habilitado" style="width:16px;height:16px;accent-color:var(--red)">
+          <span>Habilitar botón <strong>"Emitir e-CF"</strong> en Facturación</span>
+        </label>
+      </div>
+
+      <button class="btn btn-primary" onclick="guardarConfigECF()" style="width:100%;padding:10px;font-size:0.85rem">
+        💾 Guardar configuración de facturación electrónica
+      </button>
+    </div>
+
+    <div style="display:none"><!-- grid wrapper closed above -->
     </div>
 
     <!-- DATOS DEMO -->

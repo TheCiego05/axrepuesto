@@ -42,7 +42,7 @@ async function actualizarDashboard() {
     dbGetAll('facturas'), dbGetAll('cuentas_cobrar')
   ]);
 
-  const activas   = ordenes.filter(o => !['cerrado','cancelado','descartado'].includes(o.estado_orden));
+  const activas   = ordenes.filter(o => !['entregado'].includes(o.estado_orden));
   const hoy       = new Date().toDateString();
   const facHoy    = facturas.filter(f => new Date(f.creado_en).toDateString() === hoy);
   const totalHoy  = facHoy.reduce((s,f) => s + (f.total||0), 0);
@@ -57,11 +57,10 @@ async function actualizarDashboard() {
 
   // Mini kanban en dashboard
   const estadosDash = [
-    { key:'borrador',            label:'Borrador', cls:'badge-gray' },
-    { key:'en_diagnostico',      label:'Diagnóstico', cls:'badge-blue' },
-    { key:'pendiente_aprobacion',label:'Por Aprobar', cls:'badge-yellow' },
-    { key:'en_progreso',         label:'En Progreso', cls:'badge-yellow' },
-    { key:'pendiente_pago',      label:'Por Pagar', cls:'badge-purple' },
+    { key:'recibido',  label:'Recibido',  cls:'badge-blue' },
+    { key:'en_taller', label:'En Taller', cls:'badge-yellow' },
+    { key:'listo',     label:'Listo',     cls:'badge-green' },
+    { key:'entregado', label:'Entregado', cls:'badge-gray' },
   ];
   const kanban = document.getElementById('dash-kanban');
   kanban.innerHTML = estadosDash.map(e => {
@@ -93,14 +92,10 @@ async function actualizarDashboard() {
 // Estados de ORDEN (nivel macro)
 function badgeEstadoOrden(estado) {
   const map = {
-    borrador:             '<span class="badge badge-gray">📋 Borrador</span>',
-    en_diagnostico:       '<span class="badge badge-blue">🔍 Diagnóstico</span>',
-    pendiente_aprobacion: '<span class="badge badge-yellow">⏳ Por Aprobar</span>',
-    en_progreso:          '<span class="badge badge-yellow">🔧 En Progreso</span>',
-    pendiente_pago:       '<span class="badge badge-purple">💳 Por Pagar</span>',
-    cerrado:              '<span class="badge badge-green">✅ Cerrado</span>',
-    cancelado:            '<span class="badge badge-red">❌ Cancelado</span>',
-    descartado:           '<span class="badge badge-gray">🗑️ Descartado</span>',
+    recibido:  '<span class="badge badge-blue">🔵 Recibido</span>',
+    en_taller: '<span class="badge badge-yellow">🔧 En Taller</span>',
+    listo:     '<span class="badge badge-green">✅ Listo</span>',
+    entregado: '<span class="badge badge-gray">🚗 Entregado</span>',
   };
   return map[estado] || `<span class="badge badge-gray">${estado||'—'}</span>`;
 }
@@ -132,12 +127,10 @@ function toggleVistaOrdenes(vista) {
 async function renderKanban() {
   const ordenes = await dbGetAll('ordenes');
   const cols = [
-    { key:'borrador',            label:'📋 Borrador',        cls:'badge-gray' },
-    { key:'en_diagnostico',      label:'🔍 Diagnóstico',     cls:'badge-blue' },
-    { key:'pendiente_aprobacion',label:'⏳ Por Aprobar',     cls:'badge-yellow' },
-    { key:'en_progreso',         label:'🔧 En Progreso',     cls:'badge-yellow' },
-    { key:'pendiente_pago',      label:'💳 Por Pagar',       cls:'badge-purple' },
-    { key:'cerrado',             label:'✅ Cerrado',          cls:'badge-green' },
+    { key:'recibido',  label:'🔵 Recibido',  cls:'badge-blue' },
+    { key:'en_taller', label:'🔧 En Taller', cls:'badge-yellow' },
+    { key:'listo',     label:'✅ Listo',      cls:'badge-green' },
+    { key:'entregado', label:'🚗 Entregado', cls:'badge-gray' },
   ];
   const board = document.getElementById('kanban-board');
   board.innerHTML = cols.map(col => {
