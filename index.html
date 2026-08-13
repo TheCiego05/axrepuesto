@@ -8,6 +8,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="css/styles.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 </head>
 <body>
 
@@ -15,9 +16,7 @@
 <div id="login-screen" class="login-screen">
   <div class="login-box">
     <div class="login-logo">
-      <div class="login-logo-icon">
-        <svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
-      </div>
+      <div class="login-logo-icon"><i data-lucide="wrench" style="width:28px;height:28px;stroke:#fff;stroke-width:2.5"></i></div>
       <h1>Llave10</h1>
       <p>Sistema de Gestión para Talleres · by Axentia</p>
     </div>
@@ -44,9 +43,7 @@
 <nav id="sidebar">
   <div class="sidebar-logo">
     <div class="logo-brand">
-      <div class="logo-icon">
-        <svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
-      </div>
+      <div class="logo-icon"><i data-lucide="wrench" style="width:18px;height:18px;stroke:#fff;stroke-width:2.5"></i></div>
       <div class="logo-text">
         <h1>Llave10</h1>
         <p>by Axentia</p>
@@ -57,50 +54,50 @@
   <div class="nav-section">
     <div class="nav-label">Principal</div>
     <div class="nav-item active" data-page="dashboard" onclick="navegarA('dashboard')">
-      <div class="nav-dot"></div> Dashboard
+      <i data-lucide="layout-dashboard" class="nav-icon"></i> Dashboard
     </div>
   </div>
 
   <div class="nav-section">
     <div class="nav-label">Operaciones</div>
     <div class="nav-item" data-page="ordenes" onclick="navegarA('ordenes')">
-      <div class="nav-dot"></div> Órdenes de Trabajo
+      <i data-lucide="clipboard-list" class="nav-icon"></i> Órdenes de Trabajo
     </div>
     <div class="nav-item" data-page="facturas" onclick="navegarA('facturas')">
-      <div class="nav-dot"></div> Facturas
+      <i data-lucide="file-text" class="nav-icon"></i> Facturas
     </div>
     <div class="nav-item" data-page="cobros" onclick="navegarA('cobros')">
-      <div class="nav-dot"></div> Cuentas por Cobrar
+      <i data-lucide="wallet" class="nav-icon"></i> Cuentas por Cobrar
     </div>
   </div>
 
   <div class="nav-section">
     <div class="nav-label">Catálogos</div>
     <div class="nav-item" data-page="clientes" onclick="navegarA('clientes')">
-      <div class="nav-dot"></div> Clientes
+      <i data-lucide="users" class="nav-icon"></i> Clientes
     </div>
     <div class="nav-item" data-page="inventario" onclick="navegarA('inventario')">
-      <div class="nav-dot"></div> Inventario
+      <i data-lucide="package" class="nav-icon"></i> Inventario
     </div>
   </div>
 
   <div class="nav-section">
     <div class="nav-label">Análisis</div>
     <div class="nav-item" data-page="reportes" onclick="navegarA('reportes')">
-      <div class="nav-dot"></div> Reportes
+      <i data-lucide="bar-chart-2" class="nav-icon"></i> Reportes
     </div>
     <div class="nav-item" data-page="asistente" onclick="navegarA('asistente')">
-      <div class="nav-dot"></div> Asistente IA
+      <i data-lucide="bot" class="nav-icon"></i> Asistente IA
     </div>
   </div>
 
   <div class="nav-section">
     <div class="nav-label">Sistema</div>
     <div class="nav-item" data-page="usuarios" onclick="navegarA('usuarios')">
-      <div class="nav-dot"></div> Usuarios
+      <i data-lucide="user-cog" class="nav-icon"></i> Usuarios
     </div>
     <div class="nav-item" data-page="config" onclick="navegarA('config')">
-      <div class="nav-dot"></div> Configuración
+      <i data-lucide="settings" class="nav-icon"></i> Configuración
     </div>
   </div>
 
@@ -594,5 +591,6 @@
 <script src="js/reportes.js"></script>
 <script src="js/ia.js"></script>
 <script src="js/usuarios.js"></script>
+<script>lucide.createIcons();</script>
 </body>
 </html>
