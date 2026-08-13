@@ -119,7 +119,7 @@ function toggleNcfSection() {
 async function previsualizarNcf() {
   const tipo = document.getElementById('fac-ncf-tipo').value;
   if (!tipo) { document.getElementById('fac-ncf-preview').textContent = '—'; return; }
-  const sec = await dbGet('secuencias', tipo);
+  const sec = await getSecuencia(tipo);
   if (!sec) return;
   let preview;
   if (tipo.startsWith('e')) {
@@ -142,7 +142,7 @@ async function confirmarFactura() {
   if (usarNcf) {
     const tipoSel = document.getElementById('fac-ncf-tipo').value;
     if (!tipoSel) { showToast('Selecciona un tipo de comprobante', 'error'); return; }
-    const sec = await dbGet('secuencias', tipoSel);
+    const sec = await getSecuencia(tipoSel);
     if (!sec || sec.actual > sec.hasta) { showToast('Secuencia agotada', 'error'); return; }
     ncf = await getSiguienteNCF(tipoSel);
     tipoNcf = sec.nombre;

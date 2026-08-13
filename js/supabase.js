@@ -86,9 +86,8 @@ async function setConfig(key, value) {
 
 // ---- SECUENCIAS NCF / e-CF ----
 async function getSiguienteNCF(tipo) {
-  const { data: sec, error } = await getClient()
-    .from('secuencias').select('*').eq('tipo', tipo).single();
-  if (error || !sec) return null;
+  const sec = await getSecuencia(tipo);
+  if (!sec) return null;
   if (sec.actual > sec.hasta) return null;
 
   const num = sec.actual;
@@ -99,6 +98,30 @@ async function getSiguienteNCF(tipo) {
     return 'E' + tipo.substring(1) + String(num).padStart(10, '0');
   }
   return tipo + String(num).padStart(8, '0');
+}
+
+
+// Special getter for secuencias table (PK is 'tipo' not 'id')
+async function getSecuencia(tipo) {
+  const { data, error } = await getClient()
+    .from('secuencias').select('*').eq('tipo', tipo).single();
+  if (error) return null;
+  return data;
+}
+
+async function updateSecuencia(data) {
+  const { tipo, ...rest } = data;
+  const { error } = await getClient()
+    .from('secuencias').update(rest).eq('tipo', tipo);
+  if (error) throw error;
+  return true;
+}
+
+async function upsertSecuencia(data) {
+  const { error } = await getClient()
+    .from('secuencias').upsert(data, { onConflict: 'tipo' });
+  if (error) throw error;
+  return true;
 }
 
 async function generarNumeroFactura() {

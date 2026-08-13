@@ -166,7 +166,7 @@ async function guardarSecuencia() {
   if (!desde || !hasta || desde > hasta) { showToast('Rango inválido', 'error'); return; }
 
   const tipoInfo = TIPOS_NCF.find(t => t.tipo === tipo);
-  const existente = await dbGet('secuencias', tipo);
+  const existente = await getSecuencia(tipo);
   const data = {
     tipo,
     nombre: tipoInfo?.nombre || tipo,
@@ -176,7 +176,7 @@ async function guardarSecuencia() {
     activa: document.getElementById('seq-activa').checked,
   };
 
-  await dbUpdate('secuencias', data);
+  await upsertSecuencia(data);
   cerrarModal('modal-secuencia');
   showToast('Secuencia guardada', 'success');
   cargarSecuencias();
@@ -184,7 +184,8 @@ async function guardarSecuencia() {
 
 async function eliminarSecuencia(tipo) {
   if (!await confirmar('¿Eliminar esta secuencia? Se perderán los datos de rango configurado.')) return;
-  await dbDelete('secuencias', tipo);
+  const { error } = await getClient().from('secuencias').delete().eq('tipo', tipo);
+  if (error) throw error;
   showToast('Secuencia eliminada', 'info');
   cargarSecuencias();
 }
@@ -391,14 +392,14 @@ async function guardarConfigECF() {
 
   // Crear secuencias automáticamente según el formato
   if (formato === 'eCF' || formato === 'ambos') {
-    await dbUpdate('secuencias', {
+    await upsertSecuencia({
       tipo: 'e32', nombre: 'Consumidor Final', formato: 'eCF',
       desde: parseInt(siguiente), hasta: parseInt(siguiente) + 999,
       actual: parseInt(siguiente), activa: habilitado === 'true'
     });
   }
   if (formato === 'NCF' || formato === 'ambos') {
-    await dbUpdate('secuencias', {
+    await upsertSecuencia({
       tipo: 'B01', nombre: 'Crédito Fiscal', formato: 'NCF',
       desde: parseInt(sigB01), hasta: parseInt(sigB01) + 999,
       actual: parseInt(sigB01), activa: habilitado === 'true'
