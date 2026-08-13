@@ -1,3 +1,26 @@
+
+async function cargarMetodosPago(selectId = 'fac-metodo-pago') {
+  const sel = document.getElementById(selectId);
+  if (!sel) return;
+  try {
+    const metodos = await dbGetAll('metodos_pago');
+    const activos = metodos.filter(m => m.activo).sort((a,b) => a.orden - b.orden);
+    if (activos.length) {
+      sel.innerHTML = activos.map(m =>
+        `<option value="${m.nombre.toLowerCase()}">${m.icono} ${m.nombre}</option>`
+      ).join('');
+    }
+  } catch(e) {
+    // Fallback default options
+    sel.innerHTML = `
+      <option value="efectivo">💵 Efectivo</option>
+      <option value="tarjeta_debito">💳 Tarjeta Débito</option>
+      <option value="tarjeta_credito">💳 Tarjeta Crédito</option>
+      <option value="transferencia">🏦 Transferencia</option>
+      <option value="cheque">📋 Cheque</option>
+      <option value="pago_movil">📱 Pago Móvil</option>`;
+  }
+}
 // ============================================================
 // FACTURAS.JS — Facturación con NCF / e-CF
 // ============================================================
@@ -75,6 +98,7 @@ async function facturarOrden(ordenId) {
   document.getElementById('fac-metodo-pago').value = 'efectivo';
   document.getElementById('fac-usar-ncf').checked = false;
   toggleNcfSection();
+  await cargarMetodosPago('fac-metodo-pago');
 
   abrirModal('modal-facturar');
 }
