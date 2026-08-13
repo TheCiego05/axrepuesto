@@ -1,0 +1,138 @@
+/* ============================================================
+   LLAVE10 — Estilos adicionales
+   ============================================================ */
+
+/* LOGIN */
+.login-screen {
+  position: fixed; inset: 0;
+  background: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 999;
+}
+.login-box {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 40px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: var(--shadow);
+}
+.login-logo { text-align: center; margin-bottom: 28px; }
+.login-logo h1 { font-size: 2rem; font-weight: 800; color: var(--accent); }
+.login-logo p  { font-size: 0.8rem; color: var(--text2); margin-top: 4px; }
+
+/* USUARIO BADGE en sidebar */
+.user-badge {
+  padding: 10px 12px;
+  background: var(--bg3);
+  border-radius: 8px;
+  margin-bottom: 8px;
+  display: flex; align-items: center; gap: 10px;
+}
+.user-badge .avatar {
+  width: 32px; height: 32px;
+  background: var(--accent);
+  color: #000;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 0.8rem; flex-shrink: 0;
+}
+.user-badge .info { flex: 1; min-width: 0; }
+.user-badge .info strong { font-size: 0.78rem; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.user-badge .info span   { font-size: 0.65rem; color: var(--text2); }
+
+/* KANBAN de estados de orden */
+.kanban-wrap {
+  display: flex; gap: 12px; overflow-x: auto;
+  padding-bottom: 12px; min-height: 400px;
+}
+.kanban-col {
+  min-width: 220px; width: 220px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  display: flex; flex-direction: column;
+}
+.kanban-col-header {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.kanban-col-header h4 { font-size: 0.78rem; font-weight: 700; }
+.kanban-col-body { padding: 8px; flex: 1; overflow-y: auto; }
+.kanban-card {
+  background: var(--bg3);
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: border-color 0.15s;
+}
+.kanban-card:hover { border-color: var(--accent); }
+.kanban-card h5 { font-size: 0.8rem; font-weight: 600; margin-bottom: 4px; }
+.kanban-card p  { font-size: 0.7rem; color: var(--text2); line-height: 1.4; }
+.kanban-card .kc-meta { display: flex; justify-content: space-between; margin-top: 6px; }
+
+/* TABS */
+.tabs { display: flex; gap: 2px; background: var(--bg3); border-radius: 8px; padding: 3px; margin-bottom: 16px; }
+.tab-btn {
+  flex: 1; padding: 7px 12px; font-size: 0.78rem; font-weight: 600;
+  border: none; background: transparent; color: var(--text2);
+  border-radius: 6px; cursor: pointer; transition: all 0.15s;
+}
+.tab-btn.active { background: var(--bg2); color: var(--text); box-shadow: 0 1px 4px rgba(0,0,0,0.3); }
+
+/* CUENTAS POR COBRAR */
+.cobro-card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 14px 16px; margin-bottom: 10px;
+  display: flex; align-items: center; gap: 14px;
+}
+.cobro-card .cobro-info { flex: 1; }
+.cobro-card .cobro-info h4 { font-size: 0.9rem; font-weight: 600; }
+.cobro-card .cobro-info p  { font-size: 0.75rem; color: var(--text2); margin-top: 2px; }
+.cobro-montos { text-align: right; }
+.cobro-montos .total    { font-size: 1rem; font-weight: 700; color: var(--text); font-family: monospace; }
+.cobro-montos .pendiente { font-size: 0.8rem; color: var(--red); font-family: monospace; }
+.cobro-montos .pagado   { font-size: 0.75rem; color: var(--green); font-family: monospace; }
+.progress-cobro { height: 4px; background: var(--border); border-radius: 2px; margin-top: 6px; overflow: hidden; width: 120px; }
+.progress-cobro-fill { height: 100%; background: var(--green); border-radius: 2px; }
+
+/* REPORTES */
+.reporte-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap: 14px; margin-bottom: 20px; }
+.reporte-card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px; cursor: pointer;
+  transition: border-color 0.15s; text-align: center;
+}
+.reporte-card:hover { border-color: var(--accent); }
+.reporte-card .ico { font-size: 2rem; margin-bottom: 8px; }
+.reporte-card h4 { font-size: 0.85rem; font-weight: 600; margin-bottom: 4px; }
+.reporte-card p  { font-size: 0.72rem; color: var(--text2); }
+
+/* IA ASISTENTE */
+.ia-chat {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden;
+}
+.ia-messages { padding: 16px; min-height: 200px; max-height: 400px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+.ia-msg { padding: 10px 14px; border-radius: 10px; font-size: 0.83rem; max-width: 85%; }
+.ia-msg.user { background: var(--accent); color: #000; margin-left: auto; border-radius: 10px 10px 2px 10px; }
+.ia-msg.ai   { background: var(--bg3); color: var(--text); border-radius: 10px 10px 10px 2px; }
+.ia-msg.loading { color: var(--text2); font-style: italic; }
+.ia-input-row { padding: 10px 12px; border-top: 1px solid var(--border); display: flex; gap: 8px; }
+.ia-input { flex: 1; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; color: var(--text); font-size: 0.83rem; }
+.ia-input:focus { outline: none; border-color: var(--accent); }
+
+/* PRIORIDAD */
+.prioridad-alta   { color: var(--red); }
+.prioridad-media  { color: var(--yellow); }
+.prioridad-normal { color: var(--text2); }
+
+/* VISTA MÓVIL MECÁNICO */
+@media (max-width: 480px) {
+  .kanban-wrap { flex-direction: column; }
+  .kanban-col  { width: 100%; min-width: unset; }
+}
