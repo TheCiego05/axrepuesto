@@ -33,7 +33,7 @@ async function cargarFacturas(busqueda = '') {
     const q = busqueda.toLowerCase();
     filtradas = filtradas.filter(f =>
       f.numero?.toLowerCase().includes(q) ||
-      f.clienteNombre?.toLowerCase().includes(q) ||
+      f.cliente_nombre?.toLowerCase().includes(q) ||
       f.ncf?.toLowerCase().includes(q)
     );
   }
@@ -48,9 +48,9 @@ async function cargarFacturas(busqueda = '') {
     <tr>
       <td class="mono text-sm">${f.numero}</td>
       <td>${formatDate(f.creadoEn)}</td>
-      <td>${f.clienteNombre}</td>
+      <td>${f.cliente_nombre}</td>
       <td class="mono text-xs">${f.ncf ? `<span class="badge badge-purple">${f.ncf}</span>` : '<span class="badge badge-gray">Sin NCF</span>'}</td>
-      <td>${f.ncf ? (f.tipoNcf || '—') : '—'}</td>
+      <td>${f.ncf ? (f.tipo_ncf || '—') : '—'}</td>
       <td class="mono">${formatMoney(f.total)}</td>
       <td>
         <div class="td-actions">
@@ -66,8 +66,8 @@ async function cargarFacturas(busqueda = '') {
 async function facturarOrden(ordenId) {
   const orden = await dbGet('ordenes', ordenId);
   if (!orden) return;
-  const cliente = await dbGet('clientes', orden.clienteId);
-  const vehiculo = await dbGet('vehiculos', orden.vehiculoId);
+  const cliente = await dbGet('clientes', orden.cliente_id);
+  const vehiculo = await dbGet('vehiculos', orden.vehiculo_id);
 
   // Calcular totales
   const arreglos = orden.arreglos || [];
@@ -159,20 +159,20 @@ async function confirmarFactura() {
 
   const factura = {
     numero,
-    ordenId: facturaActual.orden.id,
-    clienteId: facturaActual.cliente?.id,
-    clienteNombre: document.getElementById('fac-cliente-nombre').value,
-    clienteCedula: document.getElementById('fac-cliente-cedula').value,
-    clienteRnc: document.getElementById('fac-cliente-rnc').value,
-    vehiculoPlaca: facturaActual.vehiculo?.placa,
-    vehiculoDesc: `${facturaActual.vehiculo?.marca||''} ${facturaActual.vehiculo?.modelo||''} ${facturaActual.vehiculo?.anio||''}`,
+    orden_id: facturaActual.orden.id,
+    cliente_id: facturaActual.cliente?.id,
+    cliente_nombre: document.getElementById('fac-cliente-nombre').value,
+    cliente_cedula: document.getElementById('fac-cliente-cedula').value,
+    cliente_rnc: document.getElementById('fac-cliente-rnc').value,
+    vehiculo_placa: facturaActual.vehiculo?.placa,
+    vehiculo_desc: `${facturaActual.vehiculo?.marca||''} ${facturaActual.vehiculo?.modelo||''} ${facturaActual.vehiculo?.anio||''}`,
     arreglos: facturaActual.arreglos,
     subtotal: facturaActual.subtotal,
     itbis: facturaActual.itbis,
-    itbisPct: facturaActual.itbisPct * 100,
+    itbis_pct: facturaActual.itbisPct * 100,
     total: facturaActual.total,
     ncf, tipoNcf, formatoNcf,
-    metodoPago: document.getElementById('fac-metodo-pago').value,
+    metodo_pago: document.getElementById('fac-metodo-pago').value,
     negocio: config,
   };
 
@@ -235,8 +235,8 @@ function generarHTMLFactura(f) {
 
   const ncfBox = f.ncf ? `
     <div class="fac-ncf-box">
-      <strong>Comprobante Fiscal ${f.formatoNcf === 'eCF' ? 'Electrónico (e-CF)' : 'NCF'}</strong><br>
-      Tipo: ${f.tipoNcf} &nbsp;|&nbsp; NCF: <strong style="font-family:monospace">${f.ncf}</strong>
+      <strong>Comprobante Fiscal ${f.formato_ncf === 'eCF' ? 'Electrónico (e-CF)' : 'NCF'}</strong><br>
+      Tipo: ${f.tipo_ncf} &nbsp;|&nbsp; NCF: <strong style="font-family:monospace">${f.ncf}</strong>
     </div>` : '';
 
   return `
@@ -261,14 +261,14 @@ function generarHTMLFactura(f) {
     <div class="fac-parties">
       <div class="fac-party">
         <h4>Facturado A</h4>
-        <p><strong>${f.clienteNombre || '—'}</strong></p>
-        ${f.clienteCedula ? `<p>Cédula: ${f.clienteCedula}</p>` : ''}
-        ${f.clienteRnc ? `<p>RNC: ${f.clienteRnc}</p>` : ''}
+        <p><strong>${f.cliente_nombre || '—'}</strong></p>
+        ${f.cliente_cedula ? `<p>Cédula: ${f.cliente_cedula}</p>` : ''}
+        ${f.cliente_rnc ? `<p>RNC: ${f.cliente_rnc}</p>` : ''}
       </div>
       <div class="fac-party">
         <h4>Vehículo</h4>
-        <p><strong>${f.vehiculoDesc || '—'}</strong></p>
-        ${f.vehiculoPlaca ? `<p>Placa: <strong style="font-family:monospace">${f.vehiculoPlaca}</strong></p>` : ''}
+        <p><strong>${f.vehiculo_desc || '—'}</strong></p>
+        ${f.vehiculo_placa ? `<p>Placa: <strong style="font-family:monospace">${f.vehiculo_placa}</strong></p>` : ''}
       </div>
     </div>
 
@@ -280,13 +280,13 @@ function generarHTMLFactura(f) {
     <div style="display:flex;justify-content:flex-end">
       <div class="fac-totals">
         <div class="row"><span>Subtotal</span><span>${moneyHTML(f.subtotal)}</span></div>
-        <div class="row"><span>ITBIS (${f.itbisPct||18}%)</span><span>${moneyHTML(f.itbis)}</span></div>
+        <div class="row"><span>ITBIS (${f.itbis_pct||18}%)</span><span>${moneyHTML(f.itbis)}</span></div>
         <div class="row total"><span>TOTAL</span><span>${moneyHTML(f.total)}</span></div>
       </div>
     </div>
 
     <div style="margin-top:16px;font-size:0.8rem;color:#555">
-      <strong>Método de Pago:</strong> ${f.metodoPago || 'Efectivo'}
+      <strong>Método de Pago:</strong> ${f.metodo_pago || 'Efectivo'}
     </div>
 
     <div class="fac-footer">

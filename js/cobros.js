@@ -17,7 +17,7 @@ async function cargarCobros(busqueda = '') {
   }
 
   let totalPendiente = 0;
-  filtradas.forEach(c => { totalPendiente += parseFloat(c.monto_pendiente || 0); });
+  filtradas.forEach(c => { totalPendiente += parseFloat(parseFloat(c.monto_pendiente || 0) || 0); });
   document.getElementById('cobros-total-pendiente').textContent = formatMoney(totalPendiente);
 
   container.innerHTML = filtradas.map(c => {
@@ -37,7 +37,7 @@ async function cargarCobros(busqueda = '') {
       </div>
       <div class="cobro-montos">
         <div class="total">${formatMoney(c.monto_total)}</div>
-        <div class="pendiente">Pendiente: ${formatMoney(c.monto_pendiente)}</div>
+        <div class="pendiente">Pendiente: ${formatMoney(parseFloat(c.monto_pendiente || 0))}</div>
         ${c.monto_pagado > 0 ? `<div class="pagado">Pagado: ${formatMoney(c.monto_pagado)}</div>` : ''}
       </div>
       <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
