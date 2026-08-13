@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <meta name="theme-color" content="#f59e0b">
+  <title>Llave10 — Sistema de Gestión para Talleres</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="css/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+</head>
+<body>
+
+<!-- ═══════════════════════ LOGIN -->
+<div id="login-screen" class="login-screen">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="login-logo-icon"><i data-lucide="wrench" style="width:28px;height:28px;stroke:#fff;stroke-width:2.5"></i></div>
+      <h1>Llave10</h1>
+      <p>Sistema de Gestión para Talleres · by Axentia</p>
+    </div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Correo electrónico</label>
+        <input id="login-email" class="form-control" type="email" placeholder="usuario@taller.com" autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label>Contraseña</label>
+        <input id="login-password" class="form-control" type="password" placeholder="••••••••" autocomplete="current-password">
+      </div>
+      <p id="login-error" style="color:var(--red);font-size:0.78rem;min-height:18px"></p>
+      <button id="btn-login" class="btn btn-primary w-full" onclick="handleLogin()" style="padding:11px">Entrar</button>
+    </div>
+    <p style="text-align:center;margin-top:16px;font-size:0.7rem;color:var(--text2)">Primera vez: usa cualquier contraseña para configurarla</p>
+  </div>
+</div>
+
+<!-- ═══════════════════════ APP SHELL -->
+<div id="app-shell" style="display:none;display:flex;width:100%">
+
+<!-- SIDEBAR -->
+<nav id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-brand">
+      <div class="logo-icon"><i data-lucide="wrench" style="width:18px;height:18px;stroke:#fff;stroke-width:2.5"></i></div>
+      <div class="logo-text">
+        <h1>Llave10</h1>
+        <p>by Axentia</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Principal</div>
+    <div class="nav-item active" data-page="dashboard" onclick="navegarA('dashboard')">
+      <i data-lucide="layout-dashboard" class="nav-icon"></i> Dashboard
+    </div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Operaciones</div>
+    <div class="nav-item" data-page="ordenes" onclick="navegarA('ordenes')">
+      <i data-lucide="clipboard-list" class="nav-icon"></i> Órdenes de Trabajo
+    </div>
+    <div class="nav-item" data-page="facturas" onclick="navegarA('facturas')">
+      <i data-lucide="file-text" class="nav-icon"></i> Facturas
+    </div>
+    <div class="nav-item" data-page="cobros" onclick="navegarA('cobros')">
+      <i data-lucide="wallet" class="nav-icon"></i> Cuentas por Cobrar
+    </div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Catálogos</div>
+    <div class="nav-item" data-page="clientes" onclick="navegarA('clientes')">
+      <i data-lucide="users" class="nav-icon"></i> Clientes
+    </div>
+    <div class="nav-item" data-page="inventario" onclick="navegarA('inventario')">
+      <i data-lucide="package" class="nav-icon"></i> Inventario
+    </div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Análisis</div>
+    <div class="nav-item" data-page="reportes" onclick="navegarA('reportes')">
+      <i data-lucide="bar-chart-2" class="nav-icon"></i> Reportes
+    </div>
+    <div class="nav-item" data-page="asistente" onclick="navegarA('asistente')">
+      <i data-lucide="bot" class="nav-icon"></i> Asistente IA
+    </div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Sistema</div>
+    <div class="nav-item" data-page="usuarios" onclick="navegarA('usuarios')">
+      <i data-lucide="user-cog" class="nav-icon"></i> Usuarios
+    </div>
+    <div class="nav-item" data-page="config" onclick="navegarA('config')">
+      <i data-lucide="settings" class="nav-icon"></i> Configuración
+    </div>
+  </div>
+
+  <div class="sidebar-bottom">
+    <div class="user-badge" id="user-badge"></div>
+    <button class="btn btn-ghost w-full" style="font-size:0.75rem" onclick="logout()">🚪 Cerrar Sesión</button>
+    <button class="btn-install" id="btn-install" onclick="instalarApp()">⬇️ Instalar App</button>
+    <p class="sidebar-ver" style="margin-top:6px">Llave10 v1.0 · Axentia</p>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<main id="main">
+
+  <!-- ─── DASHBOARD ─── -->
+  <div class="page active" id="page-dashboard">
+    <div class="page-topbar">
+      <div><h2>📊 Dashboard</h2><p>Resumen gerencial del taller</p></div>
+      <button class="btn btn-primary" onclick="navegarA('ordenes');setTimeout(abrirModalOrden,200)">+ Nueva Orden</button>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card yellow"><i data-lucide="wrench" style="width:20px;height:20px;stroke:#dc2626;fill:none;stroke-width:2"></i><div class="label">Órdenes Activas</div><div class="value" id="dash-ordenes">0</div><div class="sub">En proceso</div></div>
+      <div class="stat-card green"><i data-lucide="dollar-sign" style="width:20px;height:20px;stroke:#16a34a;fill:none;stroke-width:2"></i><div class="label">Ingresos Hoy</div><div class="value" id="dash-ingresos" style="font-size:1rem">RD$ 0</div><div class="sub">Facturas del día</div></div>
+      <div class="stat-card blue"><i data-lucide="credit-card" style="width:20px;height:20px;stroke:#2563eb;fill:none;stroke-width:2"></i><div class="label">Por Cobrar</div><div class="value" id="dash-por-cobrar" style="font-size:1rem">RD$ 0</div><div class="sub">Cuentas pendientes</div></div>
+      <div class="stat-card purple"><i data-lucide="alert-triangle" style="width:20px;height:20px;stroke:#7c3aed;fill:none;stroke-width:2"></i><div class="label">Stock Bajo</div><div class="value" id="dash-stock">0</div><div class="sub">Repuestos</div></div>
+    </div>
+    <!-- Kanban mini -->
+    <div class="table-wrap" style="padding:16px;margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <strong>Estado de Órdenes</strong>
+        <button class="btn btn-xs btn-ghost" onclick="navegarA('ordenes')">Ver todas →</button>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap" id="dash-kanban"></div>
+    </div>
+    <div class="table-wrap">
+      <div style="padding:14px 16px;border-bottom:1px solid var(--border)"><strong style="font-size:0.9rem">Órdenes Recientes</strong></div>
+      <table><thead><tr><th>#</th><th>Cliente</th><th>Vehículo</th><th>Estado</th><th>Prioridad</th><th></th></tr></thead>
+      <tbody id="dash-ordenes-list"><tr><td colspan="6" style="padding:20px;text-align:center;color:var(--text2)">Sin órdenes</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ─── ÓRDENES ─── -->
+  <div class="page" id="page-ordenes">
+    <div class="page-topbar">
+      <div><h2>📝 Órdenes de Trabajo</h2><p>Gestión completa de reparaciones</p></div>
+      <button class="btn btn-primary" onclick="abrirModalOrden()">+ Nueva Orden</button>
+    </div>
+    <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+      <input class="search-input" style="flex:1;min-width:200px" placeholder="Buscar por cliente, placa..." oninput="cargarOrdenes(this.value, document.getElementById('filtro-estado').value)">
+      <select id="filtro-estado" class="form-control" style="width:200px" onchange="cargarOrdenes(document.querySelector('#page-ordenes .search-input').value,this.value)">
+        <option value="">Todos los estados</option>
+        <option value="borrador">📋 Borrador / Presupuesto</option>
+        <option value="en_diagnostico">🔍 En Diagnóstico</option>
+        <option value="pendiente_aprobacion">⏳ Pendiente Aprobación</option>
+        <option value="en_progreso">🔧 En Progreso</option>
+        <option value="pendiente_pago">💳 Pendiente de Pago</option>
+        <option value="cerrado">✅ Cerrado</option>
+        <option value="cancelado">❌ Cancelado</option>
+      </select>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-sm btn-ghost" onclick="toggleVistaOrdenes('lista')" id="btn-vista-lista">☰ Lista</button>
+        <button class="btn btn-sm btn-ghost" onclick="toggleVistaOrdenes('kanban')" id="btn-vista-kanban">⬛ Kanban</button>
+      </div>
+    </div>
+    <div id="ordenes-lista"></div>
+    <div id="ordenes-kanban" style="display:none">
+      <div class="kanban-wrap" id="kanban-board"></div>
+    </div>
+  </div>
+
+  <!-- ─── CLIENTES ─── -->
+  <div class="page" id="page-clientes">
+    <div class="page-topbar">
+      <div><h2>👥 Clientes</h2><p>Gestión de clientes</p></div>
+      <button class="btn btn-primary" onclick="abrirModalCliente()">+ Nuevo Cliente</button>
+    </div>
+    <div class="table-wrap">
+      <div class="table-search"><input class="search-input" placeholder="Buscar por nombre, cédula o teléfono..." oninput="cargarClientes(this.value)"></div>
+      <table><thead><tr><th>Nombre</th><th>Cédula/RNC</th><th>Teléfono</th><th>Email</th><th>Dirección</th><th>Acciones</th></tr></thead>
+      <tbody id="clientes-tbody"></tbody></table>
+    </div>
+  </div>
+
+  <!-- ─── INVENTARIO ─── -->
+  <div class="page" id="page-inventario">
+    <div class="page-topbar">
+      <div><h2>📦 Inventario</h2><p>Repuestos y piezas</p></div>
+      <button class="btn btn-primary" onclick="abrirModalRepuesto()">+ Nuevo Repuesto</button>
+    </div>
+    <div class="table-wrap">
+      <div class="table-search"><input class="search-input" placeholder="Buscar por código, nombre o categoría..." oninput="cargarInventario(this.value)"></div>
+      <table><thead><tr><th>Código</th><th>Nombre</th><th>Categoría</th><th>Ubicación</th><th>Stock</th><th>P.Costo</th><th>P.Venta</th><th>Acciones</th></tr></thead>
+      <tbody id="inventario-tbody"></tbody></table>
+    </div>
+  </div>
+
+  <!-- ─── FACTURAS ─── -->
+  <div class="page" id="page-facturas">
+    <div class="page-topbar">
+      <div><h2>🧾 Facturas</h2><p>Historial de facturación</p></div>
+      <button class="btn btn-ghost" onclick="exportarReporteCSV('facturas')">⬇️ Exportar CSV</button>
+    </div>
+    <div class="table-wrap">
+      <div class="table-search"><input class="search-input" placeholder="Buscar por número, cliente o NCF..." oninput="cargarFacturas(this.value)"></div>
+      <table><thead><tr><th>No. Factura</th><th>Fecha</th><th>Cliente</th><th>Comprobante</th><th>Tipo</th><th>Total</th><th>Acciones</th></tr></thead>
+      <tbody id="facturas-tbody"></tbody></table>
+    </div>
+  </div>
+
+  <!-- ─── COBROS ─── -->
+  <div class="page" id="page-cobros">
+    <div class="page-topbar">
+      <div><h2>💰 Cuentas por Cobrar</h2><p>Seguimiento de pagos pendientes</p></div>
+      <div style="text-align:right">
+        <div class="text-muted text-xs">Total pendiente</div>
+        <div id="cobros-total-pendiente" class="mono" style="font-size:1.2rem;font-weight:700;color:var(--red)">RD$ 0.00</div>
+      </div>
+    </div>
+    <div class="table-wrap" style="padding:12px">
+      <input class="search-input" style="width:100%;margin-bottom:12px" placeholder="Buscar por cliente..." oninput="cargarCobros(this.value)">
+    </div>
+    <div id="cobros-lista"></div>
+  </div>
+
+  <!-- ─── REPORTES ─── -->
+  <div class="page" id="page-reportes">
+    <div class="page-topbar">
+      <div><h2>📈 Reportes</h2><p>Dashboard gerencial</p></div>
+      <select class="form-control" style="width:160px" onchange="generarResumenPeriodo(this.value)">
+        <option value="7">Últimos 7 días</option>
+        <option value="30" selected>Últimos 30 días</option>
+        <option value="90">Últimos 90 días</option>
+        <option value="365">Este año</option>
+      </select>
+    </div>
+
+    <div class="stats-grid" style="margin-bottom:20px">
+      <div class="stat-card green"><i data-lucide="dollar-sign" style="width:20px;height:20px;stroke:#16a34a;fill:none;stroke-width:2"></i><div class="label">Ventas Totales</div><div class="value" id="rep-ventas" style="font-size:1rem">—</div></div>
+      <div class="stat-card yellow"><div class="ico">📋</div><div class="label">Sin ITBIS</div><div class="value" id="rep-sin-itbis" style="font-size:1rem">—</div></div>
+      <div class="stat-card blue"><div class="ico">🏛️</div><div class="label">ITBIS Cobrado</div><div class="value" id="rep-itbis" style="font-size:1rem">—</div></div>
+      <div class="stat-card purple"><i data-lucide="credit-card" style="width:20px;height:20px;stroke:#2563eb;fill:none;stroke-width:2"></i><div class="label">Por Cobrar</div><div class="value" id="rep-por-cobrar" style="font-size:1rem">—</div></div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+      <div class="table-wrap" style="padding:16px">
+        <h3 style="font-size:0.9rem;margin-bottom:12px">🔧 Top Servicios</h3>
+        <div id="rep-top-servicios"></div>
+      </div>
+      <div class="table-wrap" style="padding:16px">
+        <h3 style="font-size:0.9rem;margin-bottom:12px">💳 Métodos de Pago</h3>
+        <div id="rep-metodos-pago"></div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+      <div class="stat-card blue" style="cursor:pointer" onclick="exportarReporteCSV('facturas')">
+        <div class="ico">🧾</div><div class="label">Exportar</div>
+        <div style="font-size:0.9rem;font-weight:600">Facturas CSV</div>
+      </div>
+      <div class="stat-card green" style="cursor:pointer" onclick="exportarReporteCSV('clientes')">
+        <div class="ico">👥</div><div class="label">Exportar</div>
+        <div style="font-size:0.9rem;font-weight:600">Clientes CSV</div>
+      </div>
+      <div class="stat-card purple" style="cursor:pointer" onclick="exportarReporteCSV('inventario')">
+        <div class="ico">📦</div><div class="label">Exportar</div>
+        <div style="font-size:0.9rem;font-weight:600">Inventario CSV</div>
+      </div>
+    </div>
+
+    <div class="table-wrap" style="padding:16px;margin-top:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <strong>Métricas adicionales</strong>
+      </div>
+      <div style="display:flex;gap:24px;flex-wrap:wrap">
+        <div><div class="text-xs text-muted">Órdenes en el período</div><div class="value" id="rep-ordenes" style="font-size:1.4rem;font-weight:700">—</div></div>
+        <div><div class="text-xs text-muted">Clientes nuevos</div><div class="value" id="rep-clientes-new" style="font-size:1.4rem;font-weight:700">—</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── ASISTENTE IA ─── -->
+  <div class="page" id="page-asistente">
+    <div class="page-topbar">
+      <div><h2>🤖 Asistente IA</h2><p>Diagnósticos, mantenimiento y checklists técnicos</p></div>
+      <button class="btn btn-ghost" onclick="limpiarChatIA()">🗑️ Limpiar chat</button>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 280px;gap:16px">
+      <div class="ia-chat">
+        <div class="ia-messages" id="ia-messages">
+          <div class="ia-msg ai">¡Hola! Soy el asistente técnico de Llave10. Puedo ayudarte con diagnósticos, checklists de mantenimiento y recomendaciones técnicas. ¿En qué puedo ayudarte?</div>
+        </div>
+        <div class="ia-input-row">
+          <input id="ia-input" class="ia-input" placeholder="Escribe tu pregunta técnica...">
+          <button class="btn btn-primary" onclick="enviarMensajeIA()">Enviar</button>
+        </div>
+      </div>
+
+      <div>
+        <div class="table-wrap" style="padding:14px">
+          <h4 style="font-size:0.85rem;margin-bottom:10px">💡 Sugerencias rápidas</h4>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <button class="btn btn-ghost btn-sm" style="text-align:left;justify-content:flex-start" onclick="sugerenciaIA('¿Cuál es el checklist de mantenimiento de 30,000 km?')">📋 Checklist 30K km</button>
+            <button class="btn btn-ghost btn-sm" style="text-align:left;justify-content:flex-start" onclick="sugerenciaIA('El cliente reporta ruido al frenar, ¿qué puede ser?')">🔊 Diagnóstico ruido frenos</button>
+            <button class="btn btn-ghost btn-sm" style="text-align:left;justify-content:flex-start" onclick="sugerenciaIA('¿Qué repuestos necesito para un cambio de aceite Toyota Corolla 2018?')">🛢️ Repuestos cambio aceite</button>
+            <button class="btn btn-ghost btn-sm" style="text-align:left;justify-content:flex-start" onclick="sugerenciaIA('El motor tiembla en ralentí, posibles causas')">⚙️ Motor tiembla en ralentí</button>
+            <button class="btn btn-ghost btn-sm" style="text-align:left;justify-content:flex-start" onclick="sugerenciaIA('¿Cuánto tiempo estimado toma un cambio de frenos completo?')">⏱️ Tiempo estimado frenos</button>
+          </div>
+        </div>
+        <div class="table-wrap" style="padding:14px;margin-top:12px">
+          <h4 style="font-size:0.85rem;margin-bottom:8px">⚙️ API Key IA</h4>
+          <p class="text-xs text-muted" style="margin-bottom:8px">Configura tu clave de Anthropic para activar el asistente</p>
+          <input id="ia-api-key" class="form-control" type="password" placeholder="sk-ant-...">
+          <button class="btn btn-primary btn-sm w-full mt-2" onclick="guardarApiKeyIA()">💾 Guardar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── USUARIOS ─── -->
+  <div class="page" id="page-usuarios">
+    <div class="page-topbar">
+      <div><h2>👤 Usuarios</h2><p>Gestión de accesos y roles</p></div>
+      <button class="btn btn-primary" onclick="abrirModalUsuario()">+ Nuevo Usuario</button>
+    </div>
+    <div class="table-wrap">
+      <table><thead><tr><th>Nombre</th><th>Email</th><th>Rol</th><th>Último Acceso</th><th>Estado</th><th>Acciones</th></tr></thead>
+      <tbody id="usuarios-tbody"></tbody></table>
+    </div>
+  </div>
+
+  <!-- ─── CONFIGURACIÓN ─── -->
+  <div class="page" id="page-config">
+    <div class="page-topbar"><div><h2>⚙️ Configuración</h2><p>Datos del negocio y comprobantes</p></div></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+      <div class="table-wrap" style="padding:20px">
+        <h3 style="margin-bottom:16px;font-size:1rem">🏪 Datos del Negocio</h3>
+        <div class="form-grid">
+          <div class="form-group"><label>Nombre del Taller</label><input id="cfg-nombre" class="form-control" placeholder="Mi Taller"></div>
+          <div class="form-group"><label>RNC</label><input id="cfg-rnc" class="form-control" placeholder="101-12345-6"></div>
+          <div class="form-group"><label>Teléfono</label><input id="cfg-telefono" class="form-control" placeholder="809-000-0000"></div>
+          <div class="form-group"><label>Dirección</label><input id="cfg-direccion" class="form-control" placeholder="Calle, Ciudad"></div>
+          <div class="form-group"><label>% ITBIS</label><input id="cfg-itbis" class="form-control" type="number" value="18"></div>
+        </div>
+        <button class="btn btn-primary mt-4 w-full" onclick="guardarConfigNegocio()">💾 Guardar</button>
+      </div>
+      <div class="table-wrap" style="padding:20px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <h3 style="font-size:1rem">🔢 Secuencias de Comprobantes</h3>
+          <button class="btn btn-sm btn-primary" onclick="abrirModalSecuencia()">+ Agregar</button>
+        </div>
+        <div id="secuencias-lista"></div>
+      </div>
+    </div>
+
+    <!-- DATOS DEMO -->
+    <div class="table-wrap" style="padding:20px;margin-top:20px;border:1px dashed var(--border2)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div>
+          <h3 style="font-size:0.95rem">🧪 Datos de Demostración</h3>
+          <p class="text-xs text-muted" style="margin-top:3px">Carga datos de prueba para explorar el sistema sin afectar datos reales</p>
+        </div>
+        <span class="badge badge-yellow">Solo pruebas</span>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-secondary" onclick="cargarDatosDemo()">
+          📥 Cargar Datos Demo
+        </button>
+        <button class="btn btn-danger" onclick="eliminarDatosDemo()">
+          🗑️ Eliminar Datos Demo
+        </button>
+      </div>
+      <div id="demo-status" style="margin-top:12px;font-size:0.78rem;color:var(--text2)"></div>
+    </div>
+  </div>
+
+</main><!-- end main -->
+</div><!-- end app-shell -->
+
+<!-- TOAST -->
+<div id="toast-container"></div>
+
+<!-- ═══════════════════════ MODALES -->
+
+<!-- MODAL CLIENTE -->
+<div class="modal-overlay" id="modal-cliente">
+  <div class="modal"><div class="modal-header"><h3 id="modal-cliente-titulo">Nuevo Cliente</h3><button class="modal-close" onclick="cerrarModal('modal-cliente')">✕</button></div>
+  <div class="modal-body"><div id="form-cliente" class="form-grid form-grid-2">
+    <div class="form-group" style="grid-column:1/-1"><label>Nombre Completo *</label><input id="cli-nombre" class="form-control" placeholder="Juan Pérez"></div>
+    <div class="form-group"><label>Cédula</label><input id="cli-cedula" class="form-control" placeholder="001-0000000-0"></div>
+    <div class="form-group"><label>RNC (empresa)</label><input id="cli-rnc" class="form-control" placeholder="101-00000-0"></div>
+    <div class="form-group"><label>Teléfono</label><input id="cli-telefono" class="form-control" placeholder="809-000-0000"></div>
+    <div class="form-group"><label>Email</label><input id="cli-email" class="form-control" type="email"></div>
+    <div class="form-group" style="grid-column:1/-1"><label>Dirección</label><input id="cli-direccion" class="form-control"></div>
+  </div></div>
+  <div class="modal-footer"><button class="btn btn-ghost" onclick="cerrarModal('modal-cliente')">Cancelar</button><button class="btn btn-primary" onclick="guardarCliente()">💾 Guardar</button></div></div>
+</div>
+
+<!-- MODAL VEHÍCULOS -->
+<div class="modal-overlay" id="modal-vehiculos">
+  <div class="modal modal-lg"><div class="modal-header"><h3 id="modal-vehiculos-titulo">Vehículos</h3><button class="modal-close" onclick="cerrarModal('modal-vehiculos')">✕</button></div>
+  <div class="modal-body"><div id="vehiculos-lista"></div><button class="btn btn-primary mt-3" onclick="abrirModalVehiculo()">+ Agregar Vehículo</button></div></div>
+</div>
+
+<!-- MODAL VEHÍCULO -->
+<div class="modal-overlay" id="modal-vehiculo">
+  <div class="modal"><div class="modal-header"><h3 id="modal-vehiculo-titulo">Nuevo Vehículo</h3><button class="modal-close" onclick="cerrarModal('modal-vehiculo')">✕</button></div>
+  <div class="modal-body"><div id="form-vehiculo" class="form-grid form-grid-2">
+    <div class="form-group"><label>Marca *</label><input id="veh-marca" class="form-control" placeholder="Toyota"></div>
+    <div class="form-group"><label>Modelo *</label><input id="veh-modelo" class="form-control" placeholder="Corolla"></div>
+    <div class="form-group"><label>Año</label><input id="veh-anio" class="form-control" type="number" placeholder="2020"></div>
+    <div class="form-group"><label>Placa</label><input id="veh-placa" class="form-control" placeholder="A123456" style="text-transform:uppercase"></div>
+    <div class="form-group"><label>Color</label><input id="veh-color" class="form-control"></div>
+    <div class="form-group"><label>Tipo</label>
+      <select id="veh-tipo" class="form-control"><option value="sedan">Sedán</option><option value="suv">SUV/Jeep</option><option value="pickup">Pick-up</option><option value="hatchback">Hatchback</option><option value="minivan">Minivan</option><option value="moto">Motocicleta</option><option value="camion">Camión</option><option value="otro">Otro</option></select>
+    </div>
+    <div class="form-group" style="grid-column:1/-1"><label>VIN / Chasis</label><input id="veh-vin" class="form-control" placeholder="1HGBH41JXMN109186"></div>
+    <div class="form-group"><label>Kilometraje</label><input id="veh-km" class="form-control" type="number" placeholder="0"></div>
+  </div></div>
+  <div class="modal-footer"><button class="btn btn-ghost" onclick="cerrarModal('modal-vehiculo')">Cancelar</button><button class="btn btn-primary" onclick="guardarVehiculo()">💾 Guardar</button></div></div>
+</div>
+
+<!-- MODAL REPUESTO -->
+<div class="modal-overlay" id="modal-repuesto">
+  <div class="modal"><div class="modal-header"><h3 id="modal-repuesto-titulo">Nuevo Repuesto</h3><button class="modal-close" onclick="cerrarModal('modal-repuesto')">✕</button></div>
+  <div class="modal-body"><div id="form-repuesto" class="form-grid form-grid-2">
+    <div class="form-group"><label>Código</label><input id="rep-codigo" class="form-control" placeholder="REP-001"></div>
+    <div class="form-group"><label>Nombre *</label><input id="rep-nombre" class="form-control"></div>
+    <div class="form-group"><label>Categoría</label><input id="rep-categoria" class="form-control"></div>
+    <div class="form-group"><label>Ubicación</label><input id="rep-ubicacion" class="form-control"></div>
+    <div class="form-group"><label>Stock</label><input id="rep-stock" class="form-control" type="number" value="0"></div>
+    <div class="form-group"><label>Stock Mínimo</label><input id="rep-stockmin" class="form-control" type="number" value="5"></div>
+    <div class="form-group"><label>Precio Costo (RD$)</label><input id="rep-costo" class="form-control" type="number" value="0" step="0.01"></div>
+    <div class="form-group"><label>Precio Venta (RD$)</label><input id="rep-venta" class="form-control" type="number" value="0" step="0.01"></div>
+    <div class="form-group" style="grid-column:1/-1"><label>Notas</label><textarea id="rep-notas" class="form-control"></textarea></div>
+  </div></div>
+  <div class="modal-footer"><button class="btn btn-ghost" onclick="cerrarModal('modal-repuesto')">Cancelar</button><button class="btn btn-primary" onclick="guardarRepuesto()">💾 Guardar</button></div></div>
+</div>
+
+<!-- MODAL NUEVA ORDEN -->
+<div class="modal-overlay" id="modal-orden">
+  <div class="modal modal-lg"><div class="modal-header"><h3 id="orden-modal-titulo">Nueva Orden de Trabajo</h3><button class="modal-close" onclick="cerrarModal('modal-orden')">✕</button></div>
+  <div class="modal-body">
+    <div id="form-orden" class="form-grid">
+      <div class="form-grid form-grid-2">
+        <div class="form-group"><label>Cliente *</label><select id="ord-cliente" class="form-control" onchange="cargarVehiculosOrden(this.value)"><option value="">— Seleccione —</option></select></div>
+        <div class="form-group"><label>Vehículo *</label><select id="ord-vehiculo" class="form-control"><option value="">— Cliente primero —</option></select></div>
+        <div class="form-group"><label>Mecánico</label><input id="ord-mecanico" class="form-control" placeholder="Nombre del mecánico"></div>
+        <div class="form-group"><label>Prioridad</label>
+          <select id="ord-prioridad" class="form-control"><option value="normal">Normal</option><option value="media">Media</option><option value="alta">🔴 Alta</option></select>
+        </div>
+        <div class="form-group"><label>Kilometraje</label><input id="ord-km" class="form-control" type="number" placeholder="Km al entrar"></div>
+        <div class="form-group"><label>Estado inicial</label>
+          <select id="ord-estado-inicial" class="form-control">
+            <option value="borrador">📋 Borrador / Presupuesto</option>
+            <option value="en_diagnostico">🔍 En Diagnóstico</option>
+            <option value="en_progreso">🔧 En Progreso</option>
+          </select>
+        </div>
+        <div class="form-group" style="grid-column:1/-1"><label>Síntomas reportados por el cliente</label><textarea id="ord-sintomas" class="form-control" placeholder="¿Qué le pasa al vehículo según el cliente?"></textarea></div>
+        <div class="form-group" style="grid-column:1/-1"><label>Notas generales</label><input id="ord-notas" class="form-control" placeholder="Observaciones adicionales..."></div>
+      </div>
+      <div class="divider"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <strong>🔧 Arreglos / Trabajos</strong>
+        <button class="btn btn-sm btn-ghost" onclick="abrirFormArreglo()">+ Agregar</button>
+      </div>
+      <div id="arreglos-temp-lista"></div>
+    </div>
+  </div>
+  <div class="modal-footer"><button class="btn btn-ghost" onclick="cerrarModal('modal-orden')">Cancelar</button><button class="btn btn-primary" onclick="guardarOrden()">💾 Crear Orden</button></div></div>
+</div>
+
+<!-- MODAL ARREGLO TEMPORAL -->
+<div class="modal-overlay" id="modal-arreglo-temp">
+  <div class="modal"><div class="modal-header"><h3 id="arreglo-temp-titulo">Agregar Arreglo</h3><button class="modal-close" onclick="cerrarModal('modal-arreglo-temp')">✕</button></div>
+  <div class="modal-body"><div id="form-arreglo-temp" class="form-grid">
+    <div class="form-group"><label>Descripción *</label><input id="at-descripcion" class="form-control" placeholder="Ej: Cambio de aceite y filtro"></div>
+    <div class="form-group"><label>Mano de Obra (RD$)</label><input id="at-mano-obra" class="form-control" type="number" value="0" step="0.01"></div>
+    <div class="form-group"><label>Notas</label><textarea id="at-notas" class="form-control" placeholder="Detalles adicionales..."></textarea></div>
+  </div></div>
+  <div class="modal-footer"><button class="btn btn-ghost" onclick="cerrarModal('modal-arreglo-temp')">Cancelar</button><button class="btn btn-primary" onclick="guardarArregloTemp()">✅ Agregar</button></div></div>
+</div>
+
+<!-- MODAL ARREGLO EXISTENTE -->
+<div class="modal-overlay" id="modal-arreglo-existente">
+  <div class="modal"><div class="modal-header"><h3>Agregar Arreglo</h3><button class="modal-close" onclick="cerrarModal('modal-arreglo-existente')">✕</button></div>
+  <div class="modal-body"><div id="form-arreglo-existente" class="form-grid">
+    <div class="form-group"><label>Descripción *</label><input id="are-descripcion" class="form-control" placeholder="Ej: Cambio de frenos"></div>
+    <div class="form-group"><label>Mano de Obra (RD$)</label><input id="are-mano-obra" class="form-control" type="number" value="0" step="0.01"></div>
+    <div class="form-group"><label>Repuesto del Inventario</label><select id="are-repuesto" class="form-control"><option value="">— Sin repuesto —</option></select></div>
+    <div class="form-group"><label>Cantidad</label><input id="are-cantidad" class="form-control" type="number" value="1" min="1"></div>
+    <div class="form-group"><label>Notas</label><textarea id="are-notas" class="form-control"></textarea></div>
+  </div></div>
+  <div class="modal-footer"><button class="btn btn-ghost" onclick="cerrarModal('modal-arreglo-existente')">Cancelar</button><button class="btn btn-primary" onclick="guardarArregloExistente()">✅ Agregar</button></div></div>
+</div>
+
+<!-- MODAL FACTURAR -->
+<div class="modal-overlay" id="modal-facturar">
+  <div class="modal modal-lg"><div class="modal-header"><h3>🧾 Generar Factura</h3><button class="modal-close" onclick="cerrarModal('modal-facturar')">✕</button></div>
+  <div class="modal-body">
+    <div class="form-grid form-grid-2">
+      <div class="form-group"><label>Nombre del Cliente</label><input id="fac-cliente-nombre" class="form-control"></div>
+      <div class="form-group"><label>Cédula</label><input id="fac-cliente-cedula" class="form-control"></div>
+      <div class="form-group"><label>RNC</label><input id="fac-cliente-rnc" class="form-control" placeholder="101-00000-0"></div>
+      <div class="form-group"><label>Método de Pago</label>
+        <select id="fac-metodo-pago" class="form-control"><option value="efectivo">💵 Efectivo</option><option value="tarjeta">💳 Tarjeta</option><option value="transferencia">🏦 Transferencia</option><option value="cheque">📋 Cheque</option></select>
+      </div>
+      <div class="form-group" style="grid-column:1/-1">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+          <input type="checkbox" id="fac-credito" style="accent-color:var(--accent)">
+          <span>Venta a crédito (crear cuenta por cobrar)</span>
+        </label>
+      </div>
+    </div>
+    <div style="background:var(--bg3);border-radius:var(--radius);padding:16px;margin:12px 0">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span class="text-muted">Subtotal</span><span id="fac-subtotal" class="mono">—</span></div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span class="text-muted">ITBIS</span><span id="fac-itbis" class="mono">—</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:1.1rem;font-weight:700;border-top:1px solid var(--border);padding-top:10px;margin-top:4px">
+        <span>TOTAL</span><span id="fac-total" class="mono" style="color:var(--accent)">—</span>
+      </div>
+    </div>
+    <div style="background:var(--bg3);border-radius:var(--radius);padding:14px">
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;margin-bottom:0">
+        <input type="checkbox" id="fac-usar-ncf" onchange="toggleNcfSection()" style="accent-color:var(--accent)">
+        <div><strong style="font-size:0.9rem">Agregar Comprobante Fiscal</strong><p class="text-xs text-muted">NCF / e-CF — Opcional</p></div>
+      </label>
+      <div id="seccion-ncf" style="display:none;margin-top:12px" class="form-grid">
+        <div class="form-group"><label>Tipo de Comprobante</label><select id="fac-ncf-tipo" class="form-control" onchange="previsualizarNcf()"><option value="">— Seleccione —</option></select></div>
+        <div class="form-group"><label>NCF que se asignará</label><div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-family:monospace;font-size:0.9rem;color:var(--accent)" id="fac-ncf-preview">—</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer"><button class="btn btn-ghost" onclick="cerrarModal('modal-facturar')">Cancelar</button><button class="btn btn-primary" onclick="confirmarFactura()">🧾 Generar Factura</button></div></div>
+</div>
+
+<!-- MODAL VER FACTURA -->
+<div class="modal-overlay" id="modal-ver-factura">
+  <div class="modal modal-xl"><div class="modal-header"><h3>Factura</h3><button class="modal-close" onclick="cerrarModal('modal-ver-factura')">✕</button></div>
+  <div class="modal-body" id="factura-html"></div>
+  <div class="modal-footer"><button class="btn btn-ghost" onclick="cerrarModal('modal-ver-factura')">Cerrar</button></div></div>
+</div>
+
+<!-- MODAL SECUENCIA -->
+<div class="modal-overlay" id="modal-secuencia">
+  <div class="modal"><div class="modal-header"><h3 id="modal-seq-titulo">Nueva Secuencia</h3><button class="modal-close" onclick="cerrarModal('modal-secuencia')">✕</button></div>
+  <div class="modal-body"><div id="form-secuencia" class="form-grid">
+    <div class="form-group"><label>Tipo *</label><select id="seq-tipo" class="form-control" onchange="actualizarPreviewSecuencia()"><option value="">— Seleccione —</option></select></div>
+    <div class="form-grid form-grid-2">
+      <div class="form-group"><label>Número Inicial *</label><input id="seq-desde" class="form-control mono" type="number" placeholder="1" oninput="actualizarPreviewSecuencia()"></div>
+      <div class="form-group"><label>Número Final *</label><input id="seq-hasta" class="form-control mono" type="number" placeholder="200"></div>
+    </div>
+    <div class="form-group"><label>Próximo NCF</label><div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-family:monospace;font-size:0.9rem;color:var(--accent)" id="seq-preview">—</div></div>
+    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.83rem"><input type="checkbox" id="seq-activa" checked style="accent-color:var(--accent)"> Secuencia activa</label>
+  </div></div>
+  <div class="modal-footer"><button class="btn btn-ghost" onclick="cerrarModal('modal-secuencia')">Cancelar</button><button class="btn btn-primary" onclick="guardarSecuencia()">💾 Guardar</button></div></div>
+</div>
+
+<!-- MODAL PAGO -->
+<div class="modal-overlay" id="modal-pago">
+  <div class="modal"><div class="modal-header"><h3>💵 Registrar Pago</h3><button class="modal-close" onclick="cerrarModal('modal-pago')">✕</button></div>
+  <div class="modal-body">
+    <p class="text-sm" style="margin-bottom:4px">Cliente: <strong id="pago-cliente"></strong></p>
+    <p class="text-sm text-muted" style="margin-bottom:14px">Monto pendiente: <strong id="pago-pendiente" style="color:var(--red)"></strong></p>
+    <div class="form-grid">
+      <div class="form-group"><label>Monto a Pagar (RD$)</label><input id="pago-monto" class="form-control" type="number" step="0.01"></div>
+      <div class="form-group"><label>Método</label><select id="pago-metodo" class="form-control"><option value="efectivo">💵 Efectivo</option><option value="tarjeta">💳 Tarjeta</option><option value="transferencia">🏦 Transferencia</option><option value="cheque">📋 Cheque</option></select></div>
+      <div class="form-group"><label>Referencia / No. Transacción</label><input id="pago-referencia" class="form-control" placeholder="Opcional"></div>
+    </div>
+  </div>
+  <div class="modal-footer"><button class="btn btn-ghost" onclick="cerrarModal('modal-pago')">Cancelar</button><button class="btn btn-primary" onclick="guardarPago()">✅ Registrar</button></div></div>
+</div>
+
+<!-- MODAL HISTORIAL PAGOS -->
+<div class="modal-overlay" id="modal-historial-pagos">
+  <div class="modal"><div class="modal-header"><h3>📋 Historial de Pagos</h3><button class="modal-close" onclick="cerrarModal('modal-historial-pagos')">✕</button></div>
+  <div class="modal-body" id="historial-pagos-content"></div>
+  <div class="modal-footer"><button class="btn btn-ghost" onclick="cerrarModal('modal-historial-pagos')">Cerrar</button></div></div>
+</div>
+
+<!-- MODAL USUARIO -->
+<div class="modal-overlay" id="modal-usuario">
+  <div class="modal"><div class="modal-header"><h3 id="modal-usuario-titulo">Nuevo Usuario</h3><button class="modal-close" onclick="cerrarModal('modal-usuario')">✕</button></div>
+  <div class="modal-body"><div class="form-grid">
+    <div class="form-group"><label>Nombre *</label><input id="usr-nombre" class="form-control"></div>
+    <div class="form-group"><label>Email *</label><input id="usr-email" class="form-control" type="email"></div>
+    <div class="form-group"><label>Rol *</label>
+      <select id="usr-rol" class="form-control">
+        <option value="2">Gerente</option>
+        <option value="3">Secretaria</option>
+        <option value="4">Mecánico</option>
+        <option value="1">Super Admin</option>
+      </select>
+    </div>
+    <div class="form-group"><label>Contraseña inicial</label><input id="usr-password" class="form-control" type="password" placeholder="El usuario la cambia en su primer acceso"></div>
+  </div></div>
+  <div class="modal-footer"><button class="btn btn-ghost" onclick="cerrarModal('modal-usuario')">Cancelar</button><button class="btn btn-primary" onclick="guardarUsuario()">💾 Guardar</button></div></div>
+</div>
+
+<!-- SCRIPTS -->
+<script src="js/supabase.js"></script>
+<script src="js/app.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/clientes.js"></script>
+<script src="js/inventario.js"></script>
+<script src="js/ordenes.js"></script>
+<script src="js/facturas.js"></script>
+<script src="js/config.js"></script>
+<script src="js/cobros.js"></script>
+<script src="js/reportes.js"></script>
+<script src="js/ia.js"></script>
+<script src="js/usuarios.js"></script>
+<script>lucide.createIcons();</script>
+</body>
+</html>
