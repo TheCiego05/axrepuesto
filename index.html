@@ -329,8 +329,21 @@
         </div>
       </div>
 
-      <!-- Lista de turnos -->
-      <div id="agenda-lista"></div>
+      <!-- Vista Parqueo -->
+      <div class="tabs" id="agenda-view-tabs" style="margin-bottom:14px">
+        <button class="tab-btn active" onclick="switchAgendaView('parqueo')">🅿️ Vista Parqueo</button>
+        <button class="tab-btn" onclick="switchAgendaView('lista')">📋 Vista Lista</button>
+      </div>
+
+      <!-- PARQUEO VISUAL -->
+      <div id="agenda-view-parqueo">
+        <div id="parqueo-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px"></div>
+      </div>
+
+      <!-- LISTA DE TURNOS -->
+      <div id="agenda-view-lista" style="display:none">
+        <div id="agenda-lista"></div>
+      </div>
     </div>
   </div>
 
@@ -725,14 +738,36 @@
       </div>
 
       <!-- Método de pago -->
-      <div class="form-group" style="margin-bottom:14px">
+      <div class="form-group" style="margin-bottom:10px">
         <label>Método de Pago</label>
-        <select id="fac-metodo-pago" class="form-control">
+        <select id="fac-metodo-pago" class="form-control" onchange="toggleCamposTransferencia(this.value)">
           <option value="Efectivo">💵 Efectivo</option>
           <option value="Tarjeta Débito">💳 Tarjeta Débito</option>
           <option value="Tarjeta Crédito">💳 Tarjeta Crédito</option>
           <option value="Transferencia">🏦 Transferencia</option>
         </select>
+      </div>
+      <!-- Campos transferencia -->
+      <div id="campos-transferencia" style="display:none;margin-bottom:14px">
+        <div class="form-grid form-grid-2">
+          <div class="form-group">
+            <label>Banco</label>
+            <select id="fac-banco" class="form-control">
+              <option value="">— Seleccionar banco —</option>
+              <option>Banco Popular</option>
+              <option>BanReservas</option>
+              <option>Scotiabank</option>
+              <option>BHD León</option>
+              <option>Banco Santa Cruz</option>
+              <option>Asociación Cibao</option>
+              <option>Otro</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Referencia / Confirmación</label>
+            <input id="fac-referencia" class="form-control" placeholder="Número de referencia">
+          </div>
+        </div>
       </div>
 
       <!-- NCF opcional -->

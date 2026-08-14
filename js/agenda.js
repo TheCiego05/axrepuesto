@@ -1,4 +1,123 @@
 
+// ---- VISTA PARQUEO ----
+let agendaViewActual = 'parqueo';
+
+function switchAgendaView(view) {
+  agendaViewActual = view;
+  document.getElementById('agenda-view-parqueo').style.display = view === 'parqueo' ? 'block' : 'none';
+  document.getElementById('agenda-view-lista').style.display   = view === 'lista'   ? 'block' : 'none';
+  document.querySelectorAll('#agenda-view-tabs .tab-btn').forEach((b,i) => {
+    b.classList.toggle('active', (i===0 && view==='parqueo') || (i===1 && view==='lista'));
+  });
+}
+
+async function renderParqueo(turnos, capacidadMax) {
+  const grid = document.getElementById('parqueo-grid');
+  if (!grid) return;
+
+  const turnosActivos = turnos.filter(t => t.estado !== 'cancelado');
+  const espacios = [];
+
+  // Fill occupied spaces
+  for (let i = 0; i < capacidadMax; i++) {
+    const turno = turnosActivos[i] || null;
+    espacios.push(turno);
+  }
+
+  grid.innerHTML = espacios.map((t, i) => {
+    const ocupado = !!t;
+    const color = ocupado
+      ? (t.estado === 'completado' ? '#16a34a' : t.estado === 'en_taller' ? '#009EED' : '#f59e0b')
+      : null;
+
+    return `
+      <div onclick="${ocupado ? `verTurnoParqueo(${t?.id})` : `abrirModalTurno()`}"
+        style="
+          background:${ocupado ? 'var(--bg2)' : '#f0f8f0'};
+          border:2px ${ocupado ? 'solid' : 'dashed'} ${ocupado ? color : '#c8daea'};
+          border-radius:12px;
+          padding:14px 10px;
+          text-align:center;
+          cursor:pointer;
+          transition:all 0.2s;
+          min-height:140px;
+          display:flex;
+          flex-direction:column;
+          align-items:center;
+          justify-content:center;
+          gap:6px;
+          position:relative;
+        "
+        onmouseover="this.style.transform='translateY(-2px)'"
+        onmouseout="this.style.transform=''"
+      >
+        <div style="font-size:0.6rem;color:var(--text2);font-weight:700;position:absolute;top:6px;left:8px">
+          #${i + 1}
+        </div>
+
+        ${ocupado ? `
+          <!-- Silueta de carro SVG -->
+          <svg viewBox="0 0 120 60" style="width:90px;height:45px;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.15))">
+            <!-- Cuerpo del carro -->
+            <rect x="5" y="30" width="110" height="22" rx="4" fill="${color}"/>
+            <!-- Techo -->
+            <path d="M25 30 L35 12 L85 12 L95 30 Z" fill="${color}" opacity="0.9"/>
+            <!-- Parabrisas delantero -->
+            <path d="M80 28 L88 14 L85 12 L78 28 Z" fill="rgba(255,255,255,0.4)"/>
+            <!-- Parabrisas trasero -->
+            <path d="M40 28 L32 14 L35 12 L42 28 Z" fill="rgba(255,255,255,0.4)"/>
+            <!-- Ventanas laterales -->
+            <rect x="43" y="14" width="34" height="14" rx="2" fill="rgba(255,255,255,0.35)"/>
+            <!-- Rueda delantera -->
+            <circle cx="88" cy="52" r="9" fill="#1a1a2e"/>
+            <circle cx="88" cy="52" r="5" fill="#888"/>
+            <!-- Rueda trasera -->
+            <circle cx="32" cy="52" r="9" fill="#1a1a2e"/>
+            <circle cx="32" cy="52" r="5" fill="#888"/>
+            <!-- Faros delanteros -->
+            <rect x="108" y="33" width="7" height="6" rx="2" fill="rgba(255,255,200,0.9)"/>
+            <!-- Faros traseros -->
+            <rect x="5" y="33" width="7" height="6" rx="2" fill="rgba(255,80,80,0.9)"/>
+          </svg>
+
+          <div style="font-size:0.72rem;font-weight:700;color:var(--text);margin-top:2px">
+            ${t.vehiculo_placa || t.vehiculo_marca || 'Vehículo'}
+          </div>
+          <div style="font-size:0.65rem;color:var(--text2);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+            ${t.cliente_nombre || 'Cliente'}
+          </div>
+          <div style="font-size:0.62rem;font-weight:700;color:${color};margin-top:2px">
+            ${t.hora || ''}
+          </div>
+          <span style="
+            background:${color}22;
+            color:${color};
+            border:1px solid ${color}44;
+            border-radius:10px;
+            padding:2px 8px;
+            font-size:0.58rem;
+            font-weight:700;
+          ">${t.estado === 'en_taller' ? '🔧 En Taller' : t.estado === 'completado' ? '✅ Listo' : '⏳ Pendiente'}</span>
+        ` : `
+          <!-- Espacio vacío -->
+          <svg viewBox="0 0 120 60" style="width:90px;height:45px;opacity:0.15">
+            <rect x="5" y="30" width="110" height="22" rx="4" fill="#888"/>
+            <path d="M25 30 L35 12 L85 12 L95 30 Z" fill="#888" opacity="0.9"/>
+            <circle cx="88" cy="52" r="9" fill="#555"/>
+            <circle cx="32" cy="52" r="9" fill="#555"/>
+          </svg>
+          <div style="font-size:0.72rem;color:#aaa;margin-top:4px">Disponible</div>
+          <div style="font-size:0.65rem;color:#ccc">Toca para agendar</div>
+        `}
+      </div>`;
+  }).join('');
+}
+
+function verTurnoParqueo(id) {
+  // Abrir modal de edición del turno
+  abrirModalTurno(id);
+}
+
 async function cargarVehiculosClienteTurno(clienteId) {
   const sel = document.getElementById('turno-vehiculo-sel');
   if (!sel) return;
@@ -125,7 +244,10 @@ async function cargarAgenda(fecha = null) {
     bar.style.background = pct >= 100 ? '#ef4444' : pct >= 80 ? '#f59e0b' : '#009EED';
   }
 
-  // Render turnos
+  // Render parking view
+  await renderParqueo(turnosDia, capacidadMax);
+
+  // Render lista
   const lista = document.getElementById('agenda-lista');
   if (!turnosDia.length) {
     lista.innerHTML = `<div class="empty-state"><div class="ico">📅</div><h3>Sin turnos para este día</h3><p>Agrega el primer turno del día</p></div>`;
