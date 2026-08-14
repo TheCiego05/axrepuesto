@@ -4,6 +4,8 @@
 let usuarioEditId = null;
 
 async function cargarUsuarios() {
+  cargarAuditLog();
+  cargarSesionesActivas();
   const u = getUsuarioActual();
   if (!esRol('super_admin','gerente')) {
     document.getElementById('usuarios-tbody').innerHTML =
@@ -85,4 +87,93 @@ async function toggleUsuario(id, nuevoEstado) {
   await dbUpdate('usuarios', { ...u, activo: nuevoEstado });
   showToast(nuevoEstado ? 'Usuario activado' : 'Usuario desactivado', 'info');
   cargarUsuarios();
+}
+
+// ---- AUDIT LOG ----
+async function cargarAuditLog() {
+  const lista = document.getElementById('audit-log-lista');
+  if (!lista) return;
+  lista.innerHTML = skeletonCards(3);
+
+  try {
+    const { data, error } = await getClient()
+      .from('auditoria')
+      .select('*')
+      .order('creado_en', { ascending: false })
+      .limit(20);
+
+    if (error || !data?.length) {
+      lista.innerHTML = emptyState('📋', 'Sin registros', 'Las acciones del sistema aparecerán aquí');
+      return;
+    }
+
+    lista.innerHTML = data.map(log => `
+      <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);font-size:0.78rem">
+        <span style="flex-shrink:0;font-size:1rem">${iconAudit(log.accion)}</span>
+        <div style="flex:1">
+          <strong>${log.usuario_nombre || 'Sistema'}</strong>
+          <span class="text-muted"> · ${log.accion}${log.tabla ? ' en ' + log.tabla : ''}</span>
+        </div>
+        <span class="text-muted text-xs">${formatDateTime(log.creado_en)}</span>
+      </div>`).join('');
+  } catch(e) {
+    lista.innerHTML = '<p class="text-sm text-muted">Error cargando log</p>';
+  }
+}
+
+function iconAudit(accion) {
+  const map = { LOGIN:'🔑', LOGOUT:'🚪', CREATE:'➕', UPDATE:'✏️', DELETE:'🗑️' };
+  return map[accion] || '📌';
+}
+
+// ---- SESIONES ACTIVAS ----
+async function cargarSesionesActivas() {
+  const lista = document.getElementById('sesiones-lista');
+  if (!lista) return;
+
+  try {
+    const { data } = await getClient()
+      .from('sesiones')
+      .select('*, usuarios(nombre, email)')
+      .gt('expira_en', new Date().toISOString())
+      .order('creado_en', { ascending: false });
+
+    if (!data?.length) {
+      lista.innerHTML = '<p class="text-sm text-muted">Sin sesiones activas</p>';
+      return;
+    }
+
+    lista.innerHTML = data.map(s => `
+      <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);font-size:0.78rem">
+        <div class="avatar" style="width:28px;height:28px;border-radius:6px;background:var(--red);color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;flex-shrink:0">
+          ${(s.usuarios?.nombre||'?').charAt(0).toUpperCase()}
+        </div>
+        <div style="flex:1">
+          <strong>${s.usuarios?.nombre || '—'}</strong>
+          <span class="text-muted"> · ${s.usuarios?.email || ''}</span>
+          <div class="text-xs text-muted">Expira: ${formatDateTime(s.expira_en)}</div>
+        </div>
+        <button class="btn btn-xs btn-danger" onclick="cerrarSesion('${s.token}')">Cerrar</button>
+      </div>`).join('');
+  } catch(e) {
+    lista.innerHTML = '<p class="text-sm text-muted">Error cargando sesiones</p>';
+  }
+}
+
+async function cerrarSesion(token) {
+  await getClient().from('sesiones').delete().eq('token', token);
+  showToast('Sesión cerrada', 'info');
+  cargarSesionesActivas();
+}
+
+async function cerrarTodasSesiones() {
+  if (!await confirmar('¿Cerrar todas las sesiones activas? Todos los usuarios deberán volver a iniciar sesión.')) return;
+  const u = getUsuarioActual();
+  const miToken = sessionStorage.getItem('llave10_token');
+  // Keep current session, close all others
+  await getClient().from('sesiones')
+    .delete()
+    .neq('token', miToken || '');
+  showToast('Todas las sesiones cerradas', 'info');
+  cargarSesionesActivas();
 }

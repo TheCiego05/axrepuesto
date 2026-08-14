@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <meta name="theme-color" content="#f59e0b">
+  <meta name="theme-color" content="#009EED">
+  <link rel="icon" href="icons/ax-icon.svg" type="image/svg+xml">
   <title>Llave10 — Sistema de Gestión para Talleres</title>
   <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="css/styles.css">
@@ -13,7 +14,7 @@
 <body>
 
 <!-- ═══════════════════════ LOGIN -->
-<div id="login-screen" class="login-screen">
+<div id="login-screen" class="login-screen" style="background-image:radial-gradient(circle at 20% 50%,rgba(0,158,237,0.06) 0%,transparent 50%),radial-gradient(circle at 80% 20%,rgba(28,68,117,0.08) 0%,transparent 50%);">
   <div class="login-box">
     <div class="login-logo">
       <div class="login-logo-icon"><i data-lucide="wrench" style="width:28px;height:28px;stroke:#fff;stroke-width:2.5"></i></div>
@@ -54,14 +55,14 @@
   <div class="nav-section">
     <div class="nav-label">Principal</div>
     <div class="nav-item active" data-page="dashboard" onclick="navegarA('dashboard')">
-      <i data-lucide="layout-dashboard" class="nav-icon"></i> Dashboard
+      <i data-lucide="layout-dashboard" class="nav-icon"></i><span class="nav-label-mobile">Inicio</span>
     </div>
   </div>
 
   <div class="nav-section">
     <div class="nav-label">Operaciones</div>
     <div class="nav-item" data-page="ordenes" onclick="navegarA('ordenes')">
-      <i data-lucide="clipboard-list" class="nav-icon"></i> Órdenes de Trabajo
+      <i data-lucide="clipboard-list" class="nav-icon"></i><span class="nav-label-mobile">Órdenes</span> <span id="nav-badge-ordenes" class="nav-badge" style="display:none">0</span>
     </div>
     <div class="nav-item" data-page="facturas" onclick="navegarA('facturas')">
       <i data-lucide="file-text" class="nav-icon"></i> Facturas
@@ -74,7 +75,7 @@
   <div class="nav-section">
     <div class="nav-label">Catálogos</div>
     <div class="nav-item" data-page="clientes" onclick="navegarA('clientes')">
-      <i data-lucide="users" class="nav-icon"></i> Clientes
+      <i data-lucide="users" class="nav-icon"></i><span class="nav-label-mobile">Clientes</span>
     </div>
     <div class="nav-item" data-page="inventario" onclick="navegarA('inventario')">
       <i data-lucide="package" class="nav-icon"></i> Inventario
@@ -84,7 +85,7 @@
   <div class="nav-section">
     <div class="nav-label">Análisis</div>
     <div class="nav-item" data-page="agenda" onclick="navegarA('agenda')">
-      <i data-lucide="calendar" class="nav-icon"></i> Agenda
+      <i data-lucide="calendar" class="nav-icon"></i><span class="nav-label-mobile">Agenda</span>
     </div>
     <div class="nav-item" data-page="reportes" onclick="navegarA('reportes')">
       <i data-lucide="bar-chart-2" class="nav-icon"></i> Reportes
@@ -100,7 +101,7 @@
       <i data-lucide="user-cog" class="nav-icon"></i> Usuarios
     </div>
     <div class="nav-item" data-page="config" onclick="navegarA('config')">
-      <i data-lucide="settings" class="nav-icon"></i> Configuración
+      <i data-lucide="settings" class="nav-icon"></i><span class="nav-label-mobile">Config</span>
     </div>
   </div>
 
@@ -108,7 +109,10 @@
     <div class="user-badge" id="user-badge"></div>
     <button class="btn btn-ghost w-full" style="font-size:0.75rem" onclick="logout()">🚪 Cerrar Sesión</button>
     <button class="btn-install" id="btn-install" onclick="instalarApp()">⬇️ Instalar App</button>
-    <p class="sidebar-ver" style="margin-top:6px">Llave10 v1.0 · Axentia</p>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px;padding:0 2px">
+      <p class="sidebar-ver">Llave10 v1.0 · Axentia</p>
+      <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Cambiar tema"></button>
+    </div>
   </div>
 </nav>
 
@@ -502,6 +506,14 @@
 </main><!-- end main -->
 </div><!-- end app-shell -->
 
+
+<!-- PANEL LATERAL ORDEN -->
+<div id="panel-overlay" onclick="cerrarPanelOrden()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:90"></div>
+<div id="panel-orden" style="position:fixed;top:0;right:0;width:380px;max-width:95vw;height:100vh;background:var(--bg2);border-left:1px solid var(--border);z-index:95;transform:translateX(100%);transition:transform 0.25s ease;display:flex;flex-direction:column;box-shadow:-4px 0 20px rgba(0,0,0,0.2)"></div>
+
+<!-- FAB MOBILE -->
+<button class="fab" onclick="navegarA('ordenes');setTimeout(abrirModalOrden,200)" title="Nueva Orden">+</button>
+
 <!-- TOAST -->
 <div id="toast-container"></div>
 
@@ -812,6 +824,8 @@
 </div>
 
 <!-- SCRIPTS -->
+<script src="js/utils.js"></script>
+  <script src="js/ux.js"></script>
 <script src="js/supabase.js"></script>
 <script src="js/app.js"></script>
 <script src="js/auth.js"></script>
@@ -826,5 +840,12 @@
 <script src="js/usuarios.js"></script>
 <script src="js/agenda.js"></script>
 <script>lucide.createIcons();</script>
+<div id="offline-banner" style="display:none;position:fixed;top:0;left:0;right:0;background:#ef4444;color:#fff;text-align:center;padding:6px;font-size:0.75rem;font-weight:600;z-index:999">
+  📵 Sin conexión — mostrando datos en caché
+</div>
+<script>
+window.addEventListener('online',  () => document.getElementById('offline-banner').style.display='none');
+window.addEventListener('offline', () => document.getElementById('offline-banner').style.display='block');
+</script>
 </body>
 </html>

@@ -133,12 +133,63 @@ async function generarNumeroFactura() {
 // ---- AUTENTICACIÓN SIMPLE ----
 let usuarioActual = null;
 
-async function loginUsuario(email, password) {
-  // Verificar si está bloqueado por intentos fallidos
-  const { data: bloqueado } = await getClient().rpc('esta_bloqueado', { p_email: email });
-  if (bloqueado) {
-    return { error: 'Cuenta bloqueada temporalmente. Intenta en 15 minutos.' };
+// ---- SESIÓN TOKEN ----
+function generarToken() {
+  return Array.from(crypto.getRandomValues(new Uint8Array(32)))
+    .map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+async function crearSesion(usuarioId) {
+  const token = generarToken();
+  const expira = new Date(Date.now() + 8 * 60 * 60 * 1000); // 8 horas
+  await getClient().from('sesiones').insert({
+    usuario_id: usuarioId,
+    token,
+    expira_en: expira.toISOString(),
+    user_agent: navigator.userAgent.substring(0, 200),
+  });
+  sessionStorage.setItem('llave10_token', token);
+  sessionStorage.setItem('llave10_token_expira', expira.toISOString());
+  return token;
+}
+
+async function verificarSesionActiva() {
+  const token   = sessionStorage.getItem('llave10_token');
+  const expira  = sessionStorage.getItem('llave10_token_expira');
+  if (!token || !expira) return false;
+  if (new Date(expira) < new Date()) {
+    await cerrarSesionToken(token);
+    return false;
   }
+  return true;
+}
+
+async function cerrarSesionToken(token) {
+  const t = token || sessionStorage.getItem('llave10_token');
+  if (t) {
+    await getClient().from('sesiones').delete().eq('token', t);
+  }
+  sessionStorage.removeItem('llave10_token');
+  sessionStorage.removeItem('llave10_token_expira');
+}
+
+// E2: Auto-expire session check
+setInterval(async () => {
+  const expira = sessionStorage.getItem('llave10_token_expira');
+  if (expira && new Date(expira) < new Date()) {
+    showToast('Sesión expirada. Vuelve a iniciar sesión.', 'error');
+    setTimeout(() => logout(), 2000);
+  }
+}, 60000); // Check every minute
+
+async function loginUsuario(email, password) {
+  // E1: Verificar bloqueo con función mejorada
+  try {
+    const { data: bloqueado } = await getClient().rpc('esta_bloqueado', { p_email: email });
+    if (bloqueado) {
+      return { error: '🔒 Cuenta bloqueada temporalmente. Intenta de nuevo en 15 minutos.' };
+    }
+  } catch(e) { /* continuar si falla la verificación */ }
 
   // Auth simple con hash SHA-256
   const encoder = new TextEncoder();
@@ -153,26 +204,41 @@ async function loginUsuario(email, password) {
     .single();
 
   if (error || !user) {
-    // Registrar intento fallido
-    await getClient().from('login_intentos').insert({ email, exitoso: false });
-    return { error: 'Usuario no encontrado' };
+    // Registrar intento fallido con función mejorada
+    try {
+      const { data: resultado } = await getClient().rpc('registrar_intento_login', {
+        p_email: email, p_exitoso: false
+      });
+      if (resultado?.bloqueado) {
+        return { error: `🔒 Cuenta bloqueada por 15 minutos tras ${resultado.intentos} intentos fallidos.` };
+      }
+      const restantes = resultado?.restantes || 0;
+      return { error: `Usuario no encontrado. ${restantes > 0 ? restantes + ' intento(s) restante(s).' : ''}` };
+    } catch(e) {
+      return { error: 'Usuario no encontrado.' };
+    }
   }
 
   // Primera vez (sin password_hash) o verificar hash
   if (user.password_hash && user.password_hash !== hash) {
-    await getClient().from('login_intentos').insert({ email, exitoso: false });
-    const { data: intentosData } = await getClient()
-      .from('login_intentos')
-      .select('id')
-      .eq('email', email)
-      .eq('exitoso', false)
-      .gte('creado_en', new Date(Date.now() - 15*60*1000).toISOString());
-    const restantes = Math.max(0, 5 - (intentosData?.length || 0));
-    return { error: `Contraseña incorrecta. ${restantes} intento(s) restante(s).` };
+    try {
+      const { data: resultado } = await getClient().rpc('registrar_intento_login', {
+        p_email: email, p_exitoso: false
+      });
+      if (resultado?.bloqueado) {
+        return { error: `🔒 Cuenta bloqueada por 15 minutos.` };
+      }
+      const restantes = resultado?.restantes || 0;
+      return { error: `Contraseña incorrecta. ${restantes > 0 ? restantes + ' intento(s) restante(s).' : 'Cuenta será bloqueada.'}` };
+    } catch(e) {
+      return { error: 'Contraseña incorrecta.' };
+    }
   }
 
-  // Login exitoso
-  await getClient().from('login_intentos').insert({ email, exitoso: true });
+  // Login exitoso - registrar y crear sesión
+  try {
+    await getClient().rpc('registrar_intento_login', { p_email: email, p_exitoso: true });
+  } catch(e) {}
 
   if (!user.password_hash) {
     await getClient().from('usuarios')
@@ -182,6 +248,9 @@ async function loginUsuario(email, password) {
     await getClient().from('usuarios')
       .update({ ultimo_acceso: new Date().toISOString() }).eq('id', user.id);
   }
+
+  // E2: Crear token de sesión con expiración 8 horas
+  await crearSesion(user.id);
 
   usuarioActual = user;
   sessionStorage.setItem('llave10_user', JSON.stringify(user));
@@ -211,8 +280,9 @@ async function registrarAuditoria(accion, tabla = null, registroId = null, detal
   } catch(e) { /* silencioso */ }
 }
 
-function logout() {
+async function logout() {
   registrarAuditoria('LOGOUT');
+  await cerrarSesionToken();
   usuarioActual = null;
   sessionStorage.removeItem('llave10_user');
   mostrarLogin();
