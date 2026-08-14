@@ -4,8 +4,6 @@
 let repuestoEditId = null;
 
 async function cargarInventario(busqueda = '') {
-  const tbody = document.getElementById('inventario-tbody');
-  if (tbody && !busqueda) tbody.innerHTML = skeletonRows(8,4);
   const todos = await dbGetAll('repuestos');
   const filtrados = todos.filter(r =>
     !busqueda ||
