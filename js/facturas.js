@@ -187,6 +187,10 @@ async function confirmarFactura() {
   const orden = facturaActual.orden;
   await dbUpdate('ordenes', { ...orden, id: orden.id, estado_orden: 'entregado', factura_id: facturaId });
 
+    // Registrar comisión del mecánico
+    const totalMO = facturaActual.arreglos?.reduce((s,a) => s+(a.manoObra||a.mano_obra||0),0) || 0;
+    await registrarComisionMecanico(facturaActual.orden.id, facturaId, totalMO);
+
     cerrarModal('modal-facturar');
     showToast('Factura generada: ' + numero, 'success');
     cargarFacturas();

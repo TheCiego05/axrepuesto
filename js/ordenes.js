@@ -140,6 +140,7 @@ async function abrirModalOrden() {
   });
   document.getElementById('orden-modal-titulo').textContent = 'Nueva Orden de Trabajo';
   await poblarSelectCliente('ord-cliente');
+  await poblarSelectsMecanicos();
   document.getElementById('ord-vehiculo').innerHTML = '<option value="">— Seleccione cliente —</option>';
   renderArreglosTemp();
   abrirModal('modal-orden');
@@ -151,6 +152,7 @@ async function editarOrden(id) {
   arreglosTemp = [...(orden.arreglos||[])];
   document.getElementById('orden-modal-titulo').textContent = 'Editar Orden';
   await poblarSelectCliente('ord-cliente');
+  await poblarSelectsMecanicos();
   document.getElementById('ord-cliente').value = orden.cliente_id||'';
   await cargarVehiculosOrden(orden.cliente_id);
   document.getElementById('ord-vehiculo').value         = orden.vehiculo_id||'';
@@ -233,14 +235,14 @@ async function guardarOrden() {
     vehiculo_placa: vehiculo.placa,
     vehiculo_marca: vehiculo.marca,
     vehiculo_modelo: vehiculo.modelo,
-    mecanico:       document.getElementById('ord-mecanico').value.trim(),
+    mecanico:        document.getElementById('ord-mecanico-nombre')?.value || document.getElementById('ord-mecanico')?.value || '',
+    mecanico_id:     parseInt(document.getElementById('ord-mecanico-id')?.value) || null,
     prioridad:      document.getElementById('ord-prioridad').value,
     kilometraje:    parseInt(document.getElementById('ord-km').value)||null,
     estado_orden:   document.getElementById('ord-estado-inicial').value,
     sintomas:       document.getElementById('ord-sintomas').value.trim(),
     notas:          document.getElementById('ord-notas').value.trim(),
     arreglos:       arreglosTemp,
-    usuario_id:     u?.id,
   };
 
   btnLoading(btn, 'Guardando...');

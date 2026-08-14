@@ -34,6 +34,7 @@ function navegarA(pagina) {
     case 'usuarios':   cargarUsuarios(); break;
     case 'asistente':  cargarApiKeyIA(); break;
     case 'agenda':     cargarAgenda(); break;
+    case 'mecanicos':  cargarMecanicos(); break;
   }
 }
 

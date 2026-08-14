@@ -65,7 +65,7 @@
       <i data-lucide="clipboard-list" class="nav-icon"></i><span class="nav-label-mobile">Órdenes</span> <span id="nav-badge-ordenes" class="nav-badge" style="display:none">0</span>
     </div>
     <div class="nav-item" data-page="facturas" onclick="navegarA('facturas')">
-      <i data-lucide="file-text" class="nav-icon"></i> Facturas
+      <i data-lucide="file-text" class="nav-icon"></i><span>Facturas</span>
     </div>
     <div class="nav-item" data-page="cobros" onclick="navegarA('cobros')">
       <i data-lucide="wallet" class="nav-icon"></i> Cuentas por Cobrar
@@ -78,7 +78,7 @@
       <i data-lucide="users" class="nav-icon"></i><span class="nav-label-mobile">Clientes</span>
     </div>
     <div class="nav-item" data-page="inventario" onclick="navegarA('inventario')">
-      <i data-lucide="package" class="nav-icon"></i> Inventario
+      <i data-lucide="package" class="nav-icon"></i><span>Inventario</span>
     </div>
   </div>
 
@@ -88,10 +88,10 @@
       <i data-lucide="calendar" class="nav-icon"></i><span class="nav-label-mobile">Agenda</span>
     </div>
     <div class="nav-item" data-page="reportes" onclick="navegarA('reportes')">
-      <i data-lucide="bar-chart-2" class="nav-icon"></i> Reportes
+      <i data-lucide="bar-chart-2" class="nav-icon"></i><span>Reportes</span>
     </div>
     <div class="nav-item" data-page="asistente" onclick="navegarA('asistente')">
-      <i data-lucide="bot" class="nav-icon"></i> Asistente IA
+      <i data-lucide="bot" class="nav-icon"></i><span>Asistente IA</span>
     </div>
   </div>
 
@@ -328,6 +328,22 @@
 
       <!-- Lista de turnos -->
       <div id="agenda-lista"></div>
+    </div>
+  </div>
+
+  <!-- ─── MECÁNICOS ─── -->
+  <div class="page" id="page-mecanicos">
+    <div class="page-topbar">
+      <div><h2>🔧 Mecánicos</h2><p>Gestión de técnicos y comisiones de mano de obra</p></div>
+      <button class="btn btn-primary" onclick="abrirModalMecanico()">+ Nuevo Mecánico</button>
+    </div>
+    <div class="page-body">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Mecánico</th><th>Teléfono</th><th>Email</th><th>Comisión</th><th>Estado</th><th>Acciones</th></tr></thead>
+          <tbody id="mecanicos-tbody"></tbody>
+        </table>
+      </div>
     </div>
   </div>
 
@@ -691,7 +707,7 @@
       </div>
     </div>
   </div>
-  <div class="modal-footer"><button class="btn btn-ghost" onclick="cerrarModal('modal-facturar')">Cancelar</button><button class="btn btn-primary" onclick="confirmarFactura()">🧾 Generar Factura</button></div></div>
+  <div class="modal-footer"><button class="btn btn-ghost" onclick="cerrarModal('modal-facturar')">Cancelar</button><button class="btn btn-primary" id="btn-confirmar-factura" onclick="confirmarFactura()">🧾 Generar Factura</button></div></div>
 </div>
 
 <!-- MODAL VER FACTURA -->
@@ -736,6 +752,80 @@
   <div class="modal"><div class="modal-header"><h3>📋 Historial de Pagos</h3><button class="modal-close" onclick="cerrarModal('modal-historial-pagos')">✕</button></div>
   <div class="modal-body" id="historial-pagos-content"></div>
   <div class="modal-footer"><button class="btn btn-ghost" onclick="cerrarModal('modal-historial-pagos')">Cerrar</button></div></div>
+</div>
+
+<!-- MODAL MECÁNICO -->
+<div class="modal-overlay" id="modal-mecanico">
+  <div class="modal"><div class="modal-header">
+    <h3 id="modal-mecanico-titulo">Nuevo Mecánico</h3>
+    <button class="modal-close" onclick="cerrarModal('modal-mecanico')">✕</button>
+  </div>
+  <div class="modal-body">
+    <div class="form-grid form-grid-2">
+      <div class="form-group">
+        <label>Nombre *</label>
+        <input id="mec-nombre" class="form-control" placeholder="Carlos">
+      </div>
+      <div class="form-group">
+        <label>Apellido</label>
+        <input id="mec-apellido" class="form-control" placeholder="Méndez">
+      </div>
+      <div class="form-group">
+        <label>Teléfono</label>
+        <input id="mec-telefono" class="form-control" placeholder="809-000-0000">
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input id="mec-email" class="form-control" type="email">
+      </div>
+      <div class="form-group">
+        <label>Especialidad</label>
+        <select id="mec-especialidad" class="form-control">
+          <option value="General">General</option>
+          <option value="Motor y transmisión">Motor y transmisión</option>
+          <option value="Frenos y suspensión">Frenos y suspensión</option>
+          <option value="Eléctrico y electrónico">Eléctrico y electrónico</option>
+          <option value="Aire acondicionado">Aire acondicionado</option>
+          <option value="Carrocería y pintura">Carrocería y pintura</option>
+          <option value="Alineación y balanceo">Alineación y balanceo</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>% Comisión sobre Mano de Obra</label>
+        <input id="mec-porcentaje" class="form-control" type="number" value="40" min="0" max="100">
+        <span class="text-xs text-muted" style="margin-top:3px;display:block">Porcentaje del total de mano de obra que recibe el mecánico</span>
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-ghost" onclick="cerrarModal('modal-mecanico')">Cancelar</button>
+    <button class="btn btn-primary" onclick="guardarMecanico()">💾 Guardar</button>
+  </div></div>
+</div>
+
+<!-- MODAL COMISIONES MECÁNICO -->
+<div class="modal-overlay" id="modal-comisiones">
+  <div class="modal modal-lg"><div class="modal-header">
+    <h3>💰 Comisiones — <span id="com-mecanico-nombre"></span></h3>
+    <button class="modal-close" onclick="cerrarModal('modal-comisiones')">✕</button>
+  </div>
+  <div class="modal-body">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+      <div style="background:var(--bg3);border-radius:8px;padding:14px;text-align:center">
+        <div style="font-size:1.3rem;font-weight:800;color:var(--red);font-family:monospace" id="com-total-pendiente">RD$ 0</div>
+        <div class="text-xs text-muted" style="margin-top:4px">⏳ Pendiente de pago</div>
+      </div>
+      <div style="background:var(--bg3);border-radius:8px;padding:14px;text-align:center">
+        <div style="font-size:1.3rem;font-weight:800;color:var(--green);font-family:monospace" id="com-total-pagado">RD$ 0</div>
+        <div class="text-xs text-muted" style="margin-top:4px">✅ Total pagado</div>
+      </div>
+    </div>
+    <div id="com-lista"></div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-ghost" onclick="cerrarModal('modal-comisiones')">Cerrar</button>
+    <button class="btn btn-green" onclick="pagarTodasComisiones()">✅ Pagar todas las pendientes</button>
+  </div></div>
 </div>
 
 <!-- MODAL TURNO -->
@@ -838,6 +928,7 @@
 <script src="js/ia.js"></script>
 <script src="js/usuarios.js"></script>
 <script src="js/agenda.js"></script>
+<script src="js/mecanicos.js"></script>
 <script src="js/ux.js"></script>
 <script>lucide.createIcons();</script>
 <div id="offline-banner" style="display:none;position:fixed;top:0;left:0;right:0;background:#ef4444;color:#fff;text-align:center;padding:6px;font-size:0.75rem;font-weight:600;z-index:999">
