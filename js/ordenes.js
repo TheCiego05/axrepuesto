@@ -156,7 +156,19 @@ async function editarOrden(id) {
   document.getElementById('ord-cliente').value = orden.cliente_id||'';
   await cargarVehiculosOrden(orden.cliente_id);
   document.getElementById('ord-vehiculo').value         = orden.vehiculo_id||'';
-  document.getElementById('ord-mecanico').value         = orden.mecanico||'';
+  // Restore mecanico after select is populated
+  setTimeout(() => {
+    const mecSel = document.getElementById('ord-mecanico');
+    if (mecSel && orden.mecanico_id) mecSel.value = orden.mecanico_id;
+    else if (mecSel && orden.mecanico) {
+      // Try to find by name
+      Array.from(mecSel.options).forEach(opt => {
+        if (opt.text.includes(orden.mecanico)) mecSel.value = opt.value;
+      });
+    }
+    const mecIdEl = document.getElementById('ord-mecanico-id');
+    if (mecIdEl) mecIdEl.value = orden.mecanico_id || '';
+  }, 300);
   document.getElementById('ord-prioridad').value        = orden.prioridad||'normal';
   document.getElementById('ord-km').value               = orden.kilometraje||'';
   document.getElementById('ord-estado-inicial').value   = orden.estado_orden||'borrador';

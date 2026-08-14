@@ -637,7 +637,13 @@
       <div class="form-grid form-grid-2">
         <div class="form-group"><label>Cliente *</label><select id="ord-cliente" class="form-control" onchange="cargarVehiculosOrden(this.value)"><option value="">— Seleccione —</option></select></div>
         <div class="form-group"><label>Vehículo *</label><select id="ord-vehiculo" class="form-control"><option value="">— Cliente primero —</option></select></div>
-        <div class="form-group"><label>Mecánico</label><input id="ord-mecanico" class="form-control" placeholder="Nombre del mecánico"></div>
+        <div class="form-group"><label>Mecánico Responsable</label>
+          <select id="ord-mecanico" class="form-control" onchange="seleccionarMecanico(this)">
+            <option value="">— Seleccionar mecánico —</option>
+          </select>
+          <input type="hidden" id="ord-mecanico-id">
+          <input type="hidden" id="ord-mecanico-nombre">
+        </div>
         <div class="form-group"><label>Prioridad</label>
           <select id="ord-prioridad" class="form-control"><option value="normal">Normal</option><option value="media">Media</option><option value="alta">🔴 Alta</option></select>
         </div>
@@ -934,62 +940,143 @@
     <button class="modal-close" onclick="cerrarModal('modal-turno')">✕</button>
   </div>
   <div class="modal-body">
-    <div id="form-turno" class="form-grid form-grid-2">
-      <div class="form-group">
-        <label>Fecha *</label>
-        <input id="turno-fecha" class="form-control" type="date">
+
+    <!-- Wizard steps -->
+    <div class="wizard-steps">
+      <div class="wizard-step active" id="wstep-1"><div class="step-num">1</div><br>Cliente</div>
+      <div class="wizard-step" id="wstep-2"><div class="step-num">2</div><br>Vehículo</div>
+      <div class="wizard-step" id="wstep-3"><div class="step-num">3</div><br>Servicio</div>
+    </div>
+
+    <div id="form-turno">
+      <!-- PASO 1: FECHA + CLIENTE -->
+      <div class="wizard-pane active" id="wpane-1">
+        <div class="form-grid form-grid-2" style="margin-bottom:14px">
+          <div class="form-group">
+            <label>Fecha *</label>
+            <input id="turno-fecha" class="form-control" type="date">
+          </div>
+          <div class="form-group">
+            <label>Hora *</label>
+            <input id="turno-hora" class="form-control" type="time" step="900">
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="form-grid form-grid-2">
+          <div class="form-group">
+            <label>Cliente registrado</label>
+            <select id="turno-cliente" class="form-control" onchange="onClienteTurnoChange(this)">
+              <option value="">— Sin cliente registrado —</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>O escribir nombre</label>
+            <input id="turno-cliente-libre" class="form-control" placeholder="Nombre del cliente">
+          </div>
+          <div class="form-group">
+            <label>Teléfono</label>
+            <input id="turno-telefono" class="form-control" placeholder="809-000-0000">
+          </div>
+          <div class="form-group">
+            <label>Email</label>
+            <input id="turno-email" class="form-control" type="email" placeholder="correo@ejemplo.com">
+          </div>
+        </div>
       </div>
-      <div class="form-group">
-        <label>Hora *</label>
-        <input id="turno-hora" class="form-control" type="time" step="900">
+
+      <!-- PASO 2: VEHÍCULO -->
+      <div class="wizard-pane" id="wpane-2">
+        <p class="text-xs text-muted" style="margin-bottom:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px">🚗 Vehículo del Cliente</p>
+        <div class="form-group" style="margin-bottom:12px">
+          <label>Vehículos registrados del cliente</label>
+          <select id="turno-vehiculo-sel" class="form-control" style="display:none" onchange="autocompletarVehiculoTurno(this)">
+            <option value="">— Seleccionar vehículo —</option>
+          </select>
+          <p class="text-xs text-muted" style="margin-top:4px">O llena los datos manualmente abajo</p>
+        </div>
+        <div class="form-grid form-grid-2">
+          <div class="form-group"><label>Marca</label><input id="turno-marca" class="form-control" placeholder="Toyota"></div>
+          <div class="form-group"><label>Modelo</label><input id="turno-modelo" class="form-control" placeholder="Corolla"></div>
+          <div class="form-group"><label>Año</label><input id="turno-anio" class="form-control" type="number" placeholder="2020"></div>
+          <div class="form-group"><label>Color</label><input id="turno-color" class="form-control" placeholder="Plateado"></div>
+          <div class="form-group"><label>Placa</label><input id="turno-placa" class="form-control" placeholder="A123456" style="text-transform:uppercase"></div>
+          <div class="form-group"><label>VIN / No. Chasis</label><input id="turno-vin" class="form-control" placeholder="1HGBH41JXMN109186"></div>
+          <div class="form-group"><label>Kilometraje al entrar</label><input id="turno-km" class="form-control" type="number" placeholder="45000"></div>
+          <div class="form-group"><label>Tipo</label>
+            <select id="turno-tipo-veh" class="form-control">
+              <option value="sedan">Sedán</option>
+              <option value="suv">SUV / Jeep</option>
+              <option value="pickup">Pick-up</option>
+              <option value="hatchback">Hatchback</option>
+              <option value="minivan">Minivan</option>
+              <option value="moto">Motocicleta</option>
+              <option value="camion">Camión</option>
+              <option value="otro">Otro</option>
+            </select>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <p class="text-xs text-muted" style="margin-bottom:8px;font-weight:600;text-transform:uppercase">📷 Fotos al Recibir (Opcional)</p>
+        <div style="border:2px dashed var(--border2);border-radius:8px;padding:16px;text-align:center;cursor:pointer" onclick="document.getElementById('turno-fotos-input').click()">
+          <input type="file" id="turno-fotos-input" accept="image/*" multiple style="display:none" onchange="previewFotos(this)">
+          <div id="turno-fotos-preview" style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;min-height:40px">
+            <p class="text-muted text-sm">📷 Toca para agregar fotos</p>
+          </div>
+        </div>
       </div>
-      <div class="form-group">
-        <label>Cliente (si está registrado)</label>
-        <select id="turno-cliente" class="form-control">
-          <option value="">— Sin cliente registrado —</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Nombre del cliente (si no está registrado)</label>
-        <input id="turno-cliente-libre" class="form-control" placeholder="Nombre del cliente">
-      </div>
-      <div class="form-group" style="grid-column:1/-1">
-        <label>Descripción del vehículo</label>
-        <input id="turno-vehiculo-desc" class="form-control" placeholder="Toyota Corolla 2019 - Placa A123456">
-      </div>
-      <div class="form-group">
-        <label>Servicio solicitado</label>
-        <input id="turno-servicio" class="form-control" placeholder="Cambio de aceite, frenos...">
-      </div>
-      <div class="form-group">
-        <label>Duración estimada (minutos)</label>
-        <select id="turno-duracion" class="form-control">
-          <option value="30">30 min</option>
-          <option value="60" selected>1 hora</option>
-          <option value="90">1:30 hora</option>
-          <option value="120">2 horas</option>
-          <option value="180">3 horas</option>
-          <option value="240">4 horas</option>
-          <option value="480">Todo el día</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Estado</label>
-        <select id="turno-estado" class="form-control">
-          <option value="pendiente">⏳ Pendiente</option>
-          <option value="confirmado">✅ Confirmado</option>
-          <option value="cancelado">❌ Cancelado</option>
-        </select>
-      </div>
-      <div class="form-group" style="grid-column:1/-1">
-        <label>Notas</label>
-        <textarea id="turno-notas" class="form-control" placeholder="Observaciones del cliente..."></textarea>
+
+      <!-- PASO 3: SERVICIO Y MECÁNICO -->
+      <div class="wizard-pane" id="wpane-3">
+        <div class="form-group" style="margin-bottom:16px;padding:14px;background:var(--bg3);border-radius:10px;border:2px solid var(--red-dim)">
+          <label style="font-weight:700;font-size:0.8rem">👨‍🔧 Mecánico que Recibe el Vehículo *</label>
+          <select id="turno-mecanico" class="form-control" style="margin-top:6px" onchange="seleccionarMecanicoTurno(this)">
+            <option value="">— Seleccionar técnico —</option>
+          </select>
+          <input type="hidden" id="turno-mecanico-id">
+          <p class="text-xs text-muted" style="margin-top:6px">⚠️ Este técnico recibirá la comisión de mano de obra al facturar la orden</p>
+        </div>
+        <div class="form-grid form-grid-2">
+          <div class="form-group">
+            <label>Servicio solicitado</label>
+            <input id="turno-servicio" class="form-control" placeholder="Cambio de aceite, frenos...">
+          </div>
+          <div class="form-group">
+            <label>Duración estimada</label>
+            <select id="turno-duracion" class="form-control">
+              <option value="30">30 min</option>
+              <option value="60" selected>1 hora</option>
+              <option value="90">1:30 hora</option>
+              <option value="120">2 horas</option>
+              <option value="180">3 horas</option>
+              <option value="240">4 horas</option>
+              <option value="480">Todo el día</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Estado</label>
+            <select id="turno-estado" class="form-control">
+              <option value="pendiente">⏳ Pendiente</option>
+              <option value="confirmado">✅ Confirmado</option>
+              <option value="cancelado">❌ Cancelado</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Síntomas / Observaciones</label>
+          <textarea id="turno-notas" class="form-control" placeholder="¿Qué le pasa al vehículo según el cliente?..." maxlength="500"></textarea>
+        </div>
       </div>
     </div>
   </div>
-  <div class="modal-footer">
-    <button class="btn btn-ghost" onclick="cerrarModal('modal-turno')">Cancelar</button>
-    <button class="btn btn-primary" onclick="guardarTurno()">💾 Guardar Turno</button>
+  <div class="modal-footer" style="justify-content:space-between">
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-ghost" id="turno-btn-prev" onclick="wizardPrev()" style="display:none">◀ Anterior</button>
+      <button class="btn btn-ghost" onclick="cerrarModal('modal-turno')">Cancelar</button>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-primary" id="turno-btn-next" onclick="wizardNext()">Siguiente ▶</button>
+      <button class="btn btn-primary" id="turno-btn-save" onclick="guardarTurno()" style="display:none">💾 Guardar Turno</button>
+    </div>
   </div></div>
 </div>
 

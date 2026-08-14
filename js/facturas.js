@@ -357,7 +357,103 @@ async function verFactura(id) {
 }
 
 function imprimirFactura(id) {
-  verFactura(id).then(() => {
-    setTimeout(() => window.print(), 500);
+  // Abrir en ventana nueva optimizada para impresión
+  dbGet('facturas', id).then(f => {
+    if (!f) return;
+    const arreglos = Array.isArray(f.arreglos) ? f.arreglos : [];
+    const neg = f.negocio || {};
+    
+    const win = window.open('', '_blank', 'width=800,height=600');
+    win.document.write(`<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Factura ${f.numero}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; padding: 20px; color: #111; font-size: 13px; }
+    .header { display: flex; justify-content: space-between; margin-bottom: 20px; border-bottom: 2px solid #009EED; padding-bottom: 14px; }
+    .logo h2 { font-size: 1.3rem; font-weight: 800; color: #1C4475; }
+    .logo p { font-size: 0.75rem; color: #666; margin-top: 2px; }
+    .num { text-align: right; }
+    .num .numero { font-size: 1.1rem; font-weight: 800; }
+    .num .ncf { font-size: 0.85rem; color: #009EED; font-weight: 700; }
+    .parties { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 14px 0; }
+    .party h4 { font-size: 0.65rem; font-weight: 700; color: #999; text-transform: uppercase; margin-bottom: 5px; }
+    table { width: 100%; border-collapse: collapse; margin: 14px 0; }
+    th { background: #1C4475; color: #fff; padding: 7px 10px; text-align: left; font-size: 0.75rem; }
+    td { padding: 7px 10px; border-bottom: 1px solid #eee; font-size: 0.8rem; }
+    .totals { margin-left: auto; width: 220px; margin-top: 10px; }
+    .totals .row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 0.82rem; }
+    .totals .total { font-weight: 800; font-size: 1rem; border-top: 2px solid #009EED; padding-top: 6px; margin-top: 4px; }
+    .footer { margin-top: 20px; padding-top: 14px; border-top: 1px solid #eee; text-align: center; font-size: 0.7rem; color: #999; }
+    .ncf-box { background: #f0f8ff; border: 1px solid #009EED; border-radius: 5px; padding: 8px 12px; margin-bottom: 14px; font-size: 0.78rem; }
+    @media print { body { padding: 5px; } }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo">
+      <h2>🔧 ${neg.nombre || 'Mi Taller'}</h2>
+      ${neg.rnc ? `<p>RNC: ${neg.rnc}</p>` : ''}
+      <p>${neg.telefono || ''}</p>
+      <p>${neg.direccion || ''}</p>
+    </div>
+    <div class="num">
+      <div style="font-size:0.7rem;color:#999;text-transform:uppercase">Factura</div>
+      <div class="numero">${f.numero}</div>
+      ${f.ncf ? `<div class="ncf">${f.ncf}</div>` : ''}
+      <div style="font-size:0.75rem;color:#666;margin-top:4px">${new Date(f.creado_en).toLocaleDateString('es-DO')}</div>
+    </div>
+  </div>
+
+  ${f.ncf ? `<div class="ncf-box">📋 <strong>${f.tipo_ncf||'Comprobante Fiscal'}</strong>: ${f.ncf}</div>` : ''}
+
+  <div class="parties">
+    <div class="party">
+      <h4>Cliente</h4>
+      <p><strong>${f.cliente_nombre||'—'}</strong></p>
+      ${f.cliente_cedula ? `<p>Cédula: ${f.cliente_cedula}</p>` : ''}
+      ${f.cliente_rnc ? `<p>RNC: ${f.cliente_rnc}</p>` : ''}
+    </div>
+    <div class="party">
+      <h4>Vehículo</h4>
+      <p><strong>${f.vehiculo_desc||'—'}</strong></p>
+      ${f.vehiculo_placa ? `<p>Placa: <strong>${f.vehiculo_placa}</strong></p>` : ''}
+    </div>
+  </div>
+
+  <table>
+    <thead><tr><th>#</th><th>Descripción</th><th>Cant.</th><th>Precio</th><th>Total</th></tr></thead>
+    <tbody>
+      ${arreglos.map((a,i) => {
+        const mo = parseFloat(a.manoObra||a.mano_obra||0);
+        let rows = `<tr><td>${i+1}</td><td>${a.descripcion||'—'}</td><td>1</td><td>RD$ ${mo.toFixed(2)}</td><td>RD$ ${mo.toFixed(2)}</td></tr>`;
+        (a.repuestos||[]).forEach(r => {
+          const sub = parseFloat(r.precio||0)*parseFloat(r.cantidad||1);
+          rows += `<tr><td></td><td>&nbsp;↳ ${r.nombre||'Repuesto'}</td><td>${r.cantidad||1}</td><td>RD$ ${parseFloat(r.precio||0).toFixed(2)}</td><td>RD$ ${sub.toFixed(2)}</td></tr>`;
+        });
+        return rows;
+      }).join('')}
+    </tbody>
+  </table>
+
+  <div style="display:flex;justify-content:flex-end">
+    <div class="totals">
+      <div class="row"><span>Subtotal</span><span>RD$ ${parseFloat(f.subtotal||0).toFixed(2)}</span></div>
+      <div class="row"><span>ITBIS (${f.itbis_pct||18}%)</span><span>RD$ ${parseFloat(f.itbis||0).toFixed(2)}</span></div>
+      <div class="row total"><span>TOTAL</span><span>RD$ ${parseFloat(f.total||0).toFixed(2)}</span></div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <p>Método de pago: <strong>${f.metodo_pago||'—'}</strong>${f.banco ? ' · ' + f.banco : ''}${f.referencia ? ' · Ref: ' + f.referencia : ''}</p>
+    <p style="margin-top:6px">¡Gracias por su preferencia! · ${neg.nombre||''}</p>
+  </div>
+
+  <script>window.onload = () => { window.print(); }<\/script>
+</body>
+</html>`);
+    win.document.close();
   });
 }
