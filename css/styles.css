@@ -88,7 +88,7 @@ body {
   font-size: 0.76rem; color: rgba(255,255,255,0.6);
   transition: all 0.12s; border-radius: 7px;
   border: 1px solid transparent; margin-bottom: 1px;
-  position: relative;
+  position: relative; white-space: nowrap;
 }
 .nav-item:hover { background: rgba(255,255,255,0.1); color: #ffffff; }
 .nav-item.active {
