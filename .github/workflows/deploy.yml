@@ -1,6 +1,3 @@
-# ============================================================
-# GitHub Actions — Deploy con variables de entorno seguras
-# ============================================================
 name: Deploy Llave10
 
 on:
@@ -10,12 +7,16 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
     steps:
       - uses: actions/checkout@v3
 
       - name: Inyectar Supabase Key
         run: |
-          sed -i "s|TU_ANON_KEY_AQUI|${{ secrets.SUPABASE_ANON_KEY }}|g" js/supabase.js
+          # Reemplazar cualquier valor existente en SUPABASE_KEY
+          sed -i "s|const SUPABASE_KEY  = '.*';|const SUPABASE_KEY  = '${{ secrets.SUPABASE_ANON_KEY }}';|g" js/supabase.js
           echo "✅ Supabase key inyectada"
 
       - name: Deploy a GitHub Pages
