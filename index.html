@@ -97,6 +97,9 @@
 
   <div class="nav-section">
     <div class="nav-label">Sistema</div>
+    <div class="nav-item" data-page="mecanicos" onclick="navegarA('mecanicos')">
+      <i data-lucide="wrench" class="nav-icon"></i> Mecánicos
+    </div>
     <div class="nav-item" data-page="usuarios" onclick="navegarA('usuarios')">
       <i data-lucide="user-cog" class="nav-icon"></i> Usuarios
     </div>
@@ -673,41 +676,102 @@
 
 <!-- MODAL FACTURAR -->
 <div class="modal-overlay" id="modal-facturar">
-  <div class="modal modal-lg"><div class="modal-header"><h3>🧾 Generar Factura</h3><button class="modal-close" onclick="cerrarModal('modal-facturar')">✕</button></div>
-  <div class="modal-body">
-    <div class="form-grid form-grid-2">
-      <div class="form-group"><label>Nombre del Cliente</label><input id="fac-cliente-nombre" class="form-control"></div>
-      <div class="form-group"><label>Cédula</label><input id="fac-cliente-cedula" class="form-control"></div>
-      <div class="form-group"><label>RNC</label><input id="fac-cliente-rnc" class="form-control" placeholder="101-00000-0"></div>
-      <div class="form-group"><label>Método de Pago</label>
-        <select id="fac-metodo-pago" class="form-control"><option value="efectivo">💵 Efectivo</option><option value="tarjeta">💳 Tarjeta</option><option value="transferencia">🏦 Transferencia</option><option value="cheque">📋 Cheque</option></select>
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <div>
+        <h3>🧾 Generar Factura</h3>
+        <p class="text-xs text-muted">Orden <span id="fac-orden-num"></span> · <span id="fac-vehiculo-desc" style="font-weight:600"></span></p>
       </div>
-      <div class="form-group" style="grid-column:1/-1">
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
-          <input type="checkbox" id="fac-credito" style="accent-color:var(--accent)">
-          <span>Venta a crédito (crear cuenta por cobrar)</span>
+      <button class="modal-close" onclick="cerrarModal('modal-facturar')">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- Arreglos incluidos -->
+      <div style="background:var(--bg3);border-radius:8px;padding:12px;margin-bottom:14px">
+        <p class="text-xs text-muted" style="margin-bottom:8px;font-weight:600;text-transform:uppercase">Servicios incluidos</p>
+        <div id="fac-arreglos-lista"></div>
+      </div>
+
+      <!-- Totales -->
+      <div style="background:var(--bg3);border-radius:8px;padding:12px;margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:0.8rem">
+          <span class="text-muted">Subtotal</span>
+          <span class="mono" id="fac-subtotal">RD$ 0.00</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:0.8rem">
+          <span class="text-muted">ITBIS (<span id="fac-itbis-pct">18%</span>)</span>
+          <span class="mono" id="fac-itbis-monto">RD$ 0.00</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:1rem;font-weight:800;border-top:2px solid var(--red);margin-top:4px">
+          <span>TOTAL</span>
+          <span class="mono" id="fac-total">RD$ 0.00</span>
+        </div>
+      </div>
+
+      <!-- Cliente -->
+      <div class="form-grid form-grid-2" style="margin-bottom:14px">
+        <div class="form-group" style="grid-column:1/-1">
+          <label>Nombre del Cliente</label>
+          <input id="fac-cliente-nombre" class="form-control" placeholder="Nombre del cliente">
+        </div>
+        <div class="form-group">
+          <label>Cédula</label>
+          <input id="fac-cliente-cedula" class="form-control" placeholder="001-0000000-0">
+        </div>
+        <div class="form-group">
+          <label>RNC (empresas)</label>
+          <input id="fac-cliente-rnc" class="form-control" placeholder="101-00000-0">
+        </div>
+      </div>
+
+      <!-- Método de pago -->
+      <div class="form-group" style="margin-bottom:14px">
+        <label>Método de Pago</label>
+        <select id="fac-metodo-pago" class="form-control">
+          <option value="Efectivo">💵 Efectivo</option>
+          <option value="Tarjeta Débito">💳 Tarjeta Débito</option>
+          <option value="Tarjeta Crédito">💳 Tarjeta Crédito</option>
+          <option value="Transferencia">🏦 Transferencia</option>
+        </select>
+      </div>
+
+      <!-- NCF opcional -->
+      <div style="border:1px dashed var(--border2);border-radius:8px;padding:12px">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.83rem;margin-bottom:8px">
+          <input type="checkbox" id="fac-usar-ncf" onchange="toggleNcfFac()" style="accent-color:var(--red)">
+          <span>Agregar Comprobante Fiscal (NCF) — opcional</span>
         </label>
+        <div id="seccion-ncf" style="display:none">
+          <div class="form-group">
+            <label>Tipo de Comprobante</label>
+            <select id="fac-ncf-tipo" class="form-control">
+              <option value="">— Sin comprobante —</option>
+            </select>
+          </div>
+        </div>
       </div>
+
     </div>
-    <div style="background:var(--bg3);border-radius:var(--radius);padding:16px;margin:12px 0">
-      <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span class="text-muted">Subtotal</span><span id="fac-subtotal" class="mono">—</span></div>
-      <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span class="text-muted">ITBIS</span><span id="fac-itbis" class="mono">—</span></div>
-      <div style="display:flex;justify-content:space-between;font-size:1.1rem;font-weight:700;border-top:1px solid var(--border);padding-top:10px;margin-top:4px">
-        <span>TOTAL</span><span id="fac-total" class="mono" style="color:var(--accent)">—</span>
-      </div>
-    </div>
-    <div style="background:var(--bg3);border-radius:var(--radius);padding:14px">
-      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;margin-bottom:0">
-        <input type="checkbox" id="fac-usar-ncf" onchange="toggleNcfSection()" style="accent-color:var(--accent)">
-        <div><strong style="font-size:0.9rem">Agregar Comprobante Fiscal</strong><p class="text-xs text-muted">NCF / e-CF — Opcional</p></div>
-      </label>
-      <div id="seccion-ncf" style="display:none;margin-top:12px" class="form-grid">
-        <div class="form-group"><label>Tipo de Comprobante</label><select id="fac-ncf-tipo" class="form-control" onchange="previsualizarNcf()"><option value="">— Seleccione —</option></select></div>
-        <div class="form-group"><label>NCF que se asignará</label><div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-family:monospace;font-size:0.9rem;color:var(--accent)" id="fac-ncf-preview">—</div></div>
-      </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="cerrarModal('modal-facturar')">Cancelar</button>
+      <button class="btn btn-primary" id="btn-confirmar-factura" onclick="confirmarFactura()">🧾 Generar Factura</button>
     </div>
   </div>
-  <div class="modal-footer"><button class="btn btn-ghost" onclick="cerrarModal('modal-facturar')">Cancelar</button><button class="btn btn-primary" id="btn-confirmar-factura" onclick="confirmarFactura()">🧾 Generar Factura</button></div></div>
+</div>
+
+<!-- MODAL VER FACTURA -->
+<div class="modal-overlay" id="modal-ver-factura">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h3>📄 Factura</h3>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-sm btn-ghost" onclick="window.print()">🖨 Imprimir</button>
+        <button class="modal-close" onclick="cerrarModal('modal-ver-factura')">✕</button>
+      </div>
+    </div>
+    <div class="modal-body" id="factura-preview-content"></div>
+  </div>
+</div></div>
 </div>
 
 <!-- MODAL VER FACTURA -->
