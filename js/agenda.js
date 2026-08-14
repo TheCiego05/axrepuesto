@@ -1,4 +1,9 @@
 
+function seleccionarMecanicoTurno(sel) {
+  const idEl = document.getElementById('turno-mecanico-id');
+  if (idEl) idEl.value = sel.value;
+}
+
 // ---- VISTA PARQUEO ----
 let agendaViewActual = 'parqueo';
 
@@ -315,6 +320,10 @@ async function abrirModalTurno(id = null) {
   document.getElementById('turno-fecha').value = document.getElementById('agenda-fecha')?.value || new Date().toISOString().split('T')[0];
 
   await poblarSelectClienteTurno();
+  // Cargar mecánicos en el selector del turno
+  if (typeof poblarSelectsMecanicos === 'function') {
+    await poblarSelectsMecanicos();
+  }
 
   if (id) {
     const t = await dbGet('agenda', id);
@@ -335,6 +344,15 @@ async function abrirModalTurno(id = null) {
     document.getElementById('turno-duracion').value = t.duracion || '60';
     document.getElementById('turno-notas').value    = t.notas || '';
     document.getElementById('turno-estado').value   = t.estado || 'pendiente';
+    // Restaurar mecánico seleccionado
+    if (t.mecanico_id) {
+      setTimeout(() => {
+        const mecSel = document.getElementById('turno-mecanico');
+        if (mecSel) mecSel.value = t.mecanico_id;
+        const mecIdEl = document.getElementById('turno-mecanico-id');
+        if (mecIdEl) mecIdEl.value = t.mecanico_id;
+      }, 300);
+    }
     // Mostrar fotos guardadas
     if (t.fotos) {
       try {
@@ -407,6 +425,12 @@ async function guardarTurno() {
     duracion:       parseInt(document.getElementById('turno-duracion').value) || 60,
     notas:          document.getElementById('turno-notas').value.trim(),
     estado:         document.getElementById('turno-estado').value || 'pendiente',
+    mecanico_id:    parseInt(document.getElementById('turno-mecanico-id')?.value) || null,
+    mecanico_nombre: (() => {
+      const sel = document.getElementById('turno-mecanico');
+      const opt = sel?.options[sel?.selectedIndex];
+      return opt?.text?.split(' · ')[0] || '';
+    })(),
   };
 
   if (turnoEditId) {

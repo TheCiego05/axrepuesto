@@ -637,7 +637,13 @@
       <div class="form-grid form-grid-2">
         <div class="form-group"><label>Cliente *</label><select id="ord-cliente" class="form-control" onchange="cargarVehiculosOrden(this.value)"><option value="">— Seleccione —</option></select></div>
         <div class="form-group"><label>Vehículo *</label><select id="ord-vehiculo" class="form-control"><option value="">— Cliente primero —</option></select></div>
-        <div class="form-group"><label>Mecánico</label><input id="ord-mecanico" class="form-control" placeholder="Nombre del mecánico"></div>
+        <div class="form-group"><label>Mecánico Responsable</label>
+          <select id="ord-mecanico" class="form-control" onchange="seleccionarMecanico(this)">
+            <option value="">— Seleccionar mecánico —</option>
+          </select>
+          <input type="hidden" id="ord-mecanico-id">
+          <input type="hidden" id="ord-mecanico-nombre">
+        </div>
         <div class="form-group"><label>Prioridad</label>
           <select id="ord-prioridad" class="form-control"><option value="normal">Normal</option><option value="media">Media</option><option value="alta">🔴 Alta</option></select>
         </div>
