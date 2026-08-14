@@ -1,4 +1,68 @@
 
+async function cargarVehiculosClienteTurno(clienteId) {
+  const sel = document.getElementById('turno-vehiculo-sel');
+  if (!sel) return;
+
+  if (!clienteId) {
+    sel.innerHTML = '<option value="">— Seleccionar vehículo (opcional) —</option>';
+    sel.style.display = 'none';
+    return;
+  }
+
+  const vehiculos = await dbGetAll('vehiculos');
+  const misVeh = vehiculos.filter(v => v.cliente_id === parseInt(clienteId));
+
+  if (!misVeh.length) {
+    sel.innerHTML = '<option value="">— Sin vehículos registrados —</option>';
+    sel.style.display = 'block';
+    return;
+  }
+
+  sel.innerHTML = '<option value="">— Seleccionar vehículo —</option>' +
+    misVeh.map(v => `<option value="${v.id}" 
+      data-marca="${v.marca||''}" 
+      data-modelo="${v.modelo||''}" 
+      data-anio="${v.anio||''}"
+      data-placa="${v.placa||''}"
+      data-color="${v.color||''}"
+      data-vin="${v.vin||''}"
+      data-tipo="${v.tipo||'sedan'}">
+      ${v.marca} ${v.modelo} ${v.anio||''} · ${v.placa||''}
+    </option>`).join('');
+  sel.style.display = 'block';
+}
+
+function autocompletarVehiculoTurno(sel) {
+  const opt = sel.options[sel.selectedIndex];
+  if (!opt?.value) return;
+
+  // Llenar campos del vehículo
+  const fields = {
+    'turno-marca':   opt.dataset.marca,
+    'turno-modelo':  opt.dataset.modelo,
+    'turno-anio':    opt.dataset.anio,
+    'turno-placa':   opt.dataset.placa,
+    'turno-color':   opt.dataset.color,
+    'turno-vin':     opt.dataset.vin,
+    'turno-tipo-veh':opt.dataset.tipo,
+  };
+  Object.entries(fields).forEach(([id, val]) => {
+    const el = document.getElementById(id);
+    if (el) el.value = val || '';
+  });
+}
+
+function onClienteTurnoChange(sel) {
+  // Si seleccionó cliente registrado, cargar sus vehículos
+  if (sel.value) {
+    document.getElementById('turno-cliente-libre').value = '';
+    cargarVehiculosClienteTurno(sel.value);
+  } else {
+    const selVeh = document.getElementById('turno-vehiculo-sel');
+    if (selVeh) selVeh.style.display = 'none';
+  }
+}
+
 // ---- FOTOS DEL VEHÍCULO ----
 let fotosBase64 = [];
 
