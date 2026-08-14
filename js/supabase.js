@@ -28,7 +28,9 @@ async function dbAdd(table, data) {
 }
 
 async function dbGetAll(table, filtros = {}) {
-  let query = getClient().from(table).select('*').order('id', { ascending: false });
+  // secuencias uses 'tipo' as PK, not 'id'
+  const orderCol = table === 'secuencias' ? 'tipo' : 'id';
+  let query = getClient().from(table).select('*').order(orderCol, { ascending: false });
   Object.entries(filtros).forEach(([col, val]) => { query = query.eq(col, val); });
   const { data, error } = await query;
   if (error) throw error;
@@ -36,37 +38,43 @@ async function dbGetAll(table, filtros = {}) {
 }
 
 async function dbGet(table, id) {
+  // secuencias uses 'tipo' as primary key, not 'id'
+  const pkCol = table === 'secuencias' ? 'tipo' : 'id';
   const { data, error } = await getClient()
-    .from(table).select('*').eq('id', id).single();
+    .from(table).select('*').eq(pkCol, id).single();
   if (error) return null;
   return data;
 }
 
 async function dbUpdate(table, data) {
   const { id, ...rest } = data;
+  // secuencias uses 'tipo' as primary key
+  const pkCol = table === 'secuencias' ? 'tipo' : 'id';
+  const pkVal = table === 'secuencias' ? data.tipo : id;
   const { error } = await getClient()
-    .from(table).update(rest).eq('id', id);
+    .from(table).update(rest).eq(pkCol, pkVal);
   if (error) throw error;
   return true;
 }
 
 async function dbDelete(table, id) {
+  const pkCol = table === 'secuencias' ? 'tipo' : 'id';
   const { error } = await getClient()
-    .from(table).delete().eq('id', id);
+    .from(table).delete().eq(pkCol, id);
   if (error) throw error;
   return true;
 }
 
 async function dbGetByIndex(table, col, value) {
   const { data, error } = await getClient()
-    .from(table).select('*').eq(col, value).order('id');
+    .from(table).select('*').eq(col, value).order(table === 'secuencias' ? 'tipo' : 'id');
   if (error) throw error;
   return data || [];
 }
 
 async function dbSearch(table, col, term) {
   const { data, error } = await getClient()
-    .from(table).select('*').ilike(col, `%${term}%`).order('id');
+    .from(table).select('*').ilike(col, `%${term}%`).order(table === 'secuencias' ? 'tipo' : 'id');
   if (error) throw error;
   return data || [];
 }

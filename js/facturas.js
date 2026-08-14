@@ -1,3 +1,8 @@
+
+function toggleCamposTransferencia(metodo) {
+  const campos = document.getElementById('campos-transferencia');
+  if (campos) campos.style.display = metodo === 'Transferencia' ? 'block' : 'none';
+}
 // ============================================================
 // FACTURAS.JS — Módulo de facturación reescrito desde cero
 // ============================================================
@@ -102,6 +107,12 @@ async function facturarOrden(ordenId) {
     // Reset NCF toggle
     const ncfCheck = document.getElementById('fac-usar-ncf');
     if (ncfCheck) { ncfCheck.checked = false; toggleNcfFac(); }
+    // Reset transferencia fields
+    const bancoEl = document.getElementById('fac-banco');
+    const refEl = document.getElementById('fac-referencia');
+    if (bancoEl) bancoEl.value = '';
+    if (refEl) refEl.value = '';
+    toggleCamposTransferencia('');
 
     abrirModal('modal-facturar');
 
@@ -231,6 +242,8 @@ async function confirmarFactura() {
       tipo_ncf:       tipoNcf,
       formato_ncf:    formatoNcf,
       metodo_pago:    document.getElementById('fac-metodo-pago')?.value || 'Efectivo',
+      banco:          document.getElementById('fac-banco')?.value || '',
+      referencia:     document.getElementById('fac-referencia')?.value || '',
       negocio,
     };
 
@@ -332,7 +345,7 @@ async function verFactura(id) {
         </div>
 
         <div class="fac-footer">
-          <p>Método de pago: <strong>${f.metodo_pago||'—'}</strong></p>
+          <p>Método de pago: <strong>${f.metodo_pago||'—'}</strong>${f.banco ? ' · ' + f.banco : ''}${f.referencia ? ' · Ref: <strong>' + f.referencia + '</strong>' : ''}</p>
           <p style="margin-top:6px">¡Gracias por su preferencia!</p>
         </div>
       </div>`;
