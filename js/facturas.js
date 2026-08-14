@@ -133,6 +133,9 @@ async function previsualizarNcf() {
 
 async function confirmarFactura() {
   if (!facturaActual) return;
+  const btn = document.querySelector('#modal-facturar .btn-primary');
+  btnLoading(btn, 'Generando factura...');
+  try {
 
   let ncf = null;
   let tipoNcf = null;
@@ -171,7 +174,9 @@ async function confirmarFactura() {
     itbis: facturaActual.itbis,
     itbis_pct: facturaActual.itbisPct * 100,
     total: facturaActual.total,
-    ncf, tipoNcf, formatoNcf,
+    ncf,
+    tipo_ncf: tipoNcf,
+    formato_ncf: formatoNcf,
     metodo_pago: document.getElementById('fac-metodo-pago').value,
     negocio: config,
   };
@@ -180,15 +185,19 @@ async function confirmarFactura() {
 
   // Marcar orden como completada
   const orden = facturaActual.orden;
-  await dbUpdate('ordenes', { ...orden, estado: 'completada', facturaId });
+  await dbUpdate('ordenes', { ...orden, id: orden.id, estado_orden: 'entregado', factura_id: facturaId });
 
-  cerrarModal('modal-facturar');
-  showToast('Factura generada: ' + numero, 'success');
-  cargarFacturas();
-  actualizarDashboard();
-
-  // Mostrar factura
-  setTimeout(() => verFactura(facturaId), 300);
+    cerrarModal('modal-facturar');
+    showToast('Factura generada: ' + numero, 'success');
+    cargarFacturas();
+    actualizarDashboard();
+    setTimeout(() => verFactura(facturaId), 300);
+  } catch(err) {
+    showToast('Error al generar factura: ' + err.message, 'error');
+    console.error(err);
+  } finally {
+    btnReset(btn);
+  }
 }
 
 // ---- VER / IMPRIMIR FACTURA ----

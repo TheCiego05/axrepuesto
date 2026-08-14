@@ -59,9 +59,15 @@ async function actualizarDashboard() {
   document.getElementById('dash-por-cobrar').textContent = formatMoney(porCobrar);
   document.getElementById('dash-stock').textContent      = stockBajo.length;
 
-  // Update stat card subs
+  // Update stat card sub
   const subOrdenes = document.querySelector('#dash-ordenes')?.closest('.stat-card')?.querySelector('.sub');
-  if (subOrdenes) subOrdenes.textContent = `${listos} listo(s) · ${activas.length} activas`;
+  if (subOrdenes) subOrdenes.textContent = `${listos} lista(s) · ${activas.length} activa(s)`;
+
+  // Notificar si hay órdenes listas
+  if (listos > 0) {
+    const badge = document.getElementById('nav-badge-ordenes');
+    if (badge) { badge.textContent = listos; badge.style.display = 'inline'; }
+  }
 
   // Mini kanban en dashboard
   const estadosDash = [
@@ -199,6 +205,25 @@ function guardarApiKeyIA() {
   const val = document.getElementById('ia-api-key').value.trim();
   if (val && val !== '••••••••') localStorage.setItem('llave10_ia_key', val);
   showToast('API Key guardada', 'success');
+}
+
+
+// ── TEMA CLARO/OSCURO ──
+function toggleTheme() {
+  const isDark = document.body.classList.toggle('theme-dark');
+  localStorage.setItem('llave10_theme', isDark ? 'dark' : 'light');
+  const btn = document.getElementById('theme-toggle');
+  if (btn) btn.classList.toggle('light', !isDark);
+}
+
+function initTheme() {
+  const saved = localStorage.getItem('llave10_theme') || 'light';
+  if (saved === 'dark') {
+    document.body.classList.add('theme-dark');
+  } else {
+    const btn = document.getElementById('theme-toggle');
+    if (btn) btn.classList.add('light');
+  }
 }
 
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});

@@ -4,6 +4,8 @@
 let clienteEditId = null;
 
 async function cargarClientes(busqueda = '') {
+  const tbody = document.getElementById('clientes-tbody');
+  if (tbody && !busqueda) tbody.innerHTML = '<tr>' + skeletonRows(6,4).replace(/<tr>/,'').replace(/<\/tr>/,'') + '</tr>';
   const todos = await dbGetAll('clientes');
   const filtrados = todos.filter(c =>
     !busqueda ||
@@ -14,7 +16,7 @@ async function cargarClientes(busqueda = '') {
 
   const tbody = document.getElementById('clientes-tbody');
   if (!filtrados.length) {
-    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="ico">👥</div><h3>No hay clientes</h3><p>Agrega tu primer cliente</p></div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan='6'>${emptyState('👥','No hay clientes','Agrega el primer cliente del taller','+ Nuevo Cliente','abrirModalCliente()')}</td></tr>`;
     return;
   }
   tbody.innerHTML = filtrados.map(c => `
@@ -52,6 +54,7 @@ function abrirModalCliente(id = null) {
 }
 
 async function guardarCliente() {
+  const btn = document.querySelector('#modal-cliente .btn-primary');
   const data = {
     nombre:    document.getElementById('cli-nombre').value.trim(),
     cedula:    document.getElementById('cli-cedula').value.trim(),
@@ -61,15 +64,23 @@ async function guardarCliente() {
     direccion: document.getElementById('cli-direccion').value.trim(),
   };
   if (!data.nombre) { showToast('El nombre es requerido', 'error'); return; }
-  if (clienteEditId) {
-    await dbUpdate('clientes', { ...data, id: clienteEditId });
-    showToast('Cliente actualizado', 'success');
-  } else {
-    await dbAdd('clientes', data);
-    showToast('Cliente agregado', 'success');
+  btnLoading(btn, 'Guardando...');
+  try {
+    if (clienteEditId) {
+      await dbUpdate('clientes', { ...data, id: clienteEditId });
+      showToast('Cliente actualizado', 'success');
+    } else {
+      await dbAdd('clientes', data);
+      showToast('Cliente agregado', 'success');
+    }
+    cerrarModal('modal-cliente');
+    cargarClientes();
+  } catch(err) {
+    showToast('Error: ' + err.message, 'error');
+    console.error(err);
+  } finally {
+    btnReset(btn);
   }
-  cerrarModal('modal-cliente');
-  cargarClientes();
 }
 
 async function editarCliente(id) { abrirModalCliente(id); }

@@ -13,6 +13,8 @@ const ESTADOS_ORDEN = [
 ];
 
 async function cargarOrdenes(busqueda='', filtroEstado='') {
+  const container = document.getElementById('ordenes-lista');
+  if (container && !busqueda && !filtroEstado) container.innerHTML = skeletonCards(3);
   const todas = await dbGetAll('ordenes');
   let filtradas = todas;
   if (busqueda) {
@@ -28,7 +30,7 @@ async function cargarOrdenes(busqueda='', filtroEstado='') {
 
   const container = document.getElementById('ordenes-lista');
   if (!filtradas.length) {
-    container.innerHTML = `<div class="empty-state"><div class="ico">📝</div><h3>No hay órdenes</h3><p>Crea la primera orden cuando llegue un cliente</p></div>`;
+    container.innerHTML = emptyState('📝','No hay órdenes de trabajo','Cuando llegue el primer cliente, crea su orden aquí','+ Nueva Orden','abrirModalOrden()');
     return;
   }
 
@@ -40,7 +42,7 @@ async function cargarOrdenes(busqueda='', filtroEstado='') {
     const puedeFacturar = o.estado_orden === 'listo';
     return `
     <div class="orden-card">
-      <div class="orden-header" onclick="toggleOrden(${o.id})">
+      <div class="orden-header" onclick="abrirPanelOrden(${o.id})" style="cursor:pointer">
         <div class="orden-info">
           <h4>🚗 ${o.vehiculo_marca||''} ${o.vehiculo_modelo||''} ${o.vehiculo_anio||''} <span class="mono" style="font-size:0.72rem;color:var(--text2)">· ${o.vehiculo_placa||'—'}</span>
             <span class="prioridad-${o.prioridad}" style="font-size:0.72rem;margin-left:6px">${iconPrioridad(o.prioridad)}</span>
@@ -68,10 +70,7 @@ async function cargarOrdenes(busqueda='', filtroEstado='') {
   }).join('');
 }
 
-function toggleOrden(id) {
-  const b = document.getElementById(`orden-body-${id}`);
-  b.style.display = b.style.display === 'none' ? 'block' : 'none';
-}
+function toggleOrden(id) { abrirPanelOrden(id); }
 
 function renderArreglos(orden) {
   const arreglos = orden.arreglos || [];
@@ -82,7 +81,7 @@ function renderArreglos(orden) {
     <div class="arreglo-item">
       <div class="arreglo-desc">
         <strong>${a.descripcion}</strong>
-        <span>Mano de obra: ${formatMoney(a.manoObra)}${repStr?' · Repuestos: '+repStr:''}</span>
+        <span>Mano de obra: ${formatMoney(a.manoObra || a.mano_obra || 0)}${repStr?' · Repuestos: '+repStr:''}</span>
         ${a.notas?`<span style="color:var(--text2);display:block;font-size:0.72rem">📝 ${a.notas}</span>`:''}
       </div>
       <div class="arreglo-actions">
@@ -219,6 +218,7 @@ function renderArreglosTemp() {
 function eliminarArregloTemp(i) { arreglosTemp.splice(i,1); renderArreglosTemp(); }
 
 async function guardarOrden() {
+  const btn = document.querySelector('#modal-orden .btn-primary');
   const clienteId  = parseInt(document.getElementById('ord-cliente').value);
   const vehiculoId = parseInt(document.getElementById('ord-vehiculo').value);
   if (!clienteId)   { showToast('Selecciona un cliente', 'error');  return; }
@@ -245,17 +245,25 @@ async function guardarOrden() {
     usuario_id:     u?.id,
   };
 
-  if (ordenEditId) {
-    const ex = await dbGet('ordenes', ordenEditId);
-    await dbUpdate('ordenes', { ...ex, ...data, id: ordenEditId });
-    showToast('Orden actualizada', 'success');
-  } else {
-    await dbAdd('ordenes', data);
-    showToast('Orden creada', 'success');
+  btnLoading(btn, 'Guardando...');
+  try {
+    if (ordenEditId) {
+      const ex = await dbGet('ordenes', ordenEditId);
+      await dbUpdate('ordenes', { ...ex, ...data, id: ordenEditId });
+      showToast('Orden actualizada', 'success');
+    } else {
+      await dbAdd('ordenes', data);
+      showToast('Orden creada', 'success');
+    }
+    cerrarModal('modal-orden');
+    cargarOrdenes();
+    actualizarDashboard();
+  } catch(err) {
+    showToast('Error al guardar la orden: ' + err.message, 'error');
+    console.error(err);
+  } finally {
+    btnReset(btn);
   }
-  cerrarModal('modal-orden');
-  cargarOrdenes();
-  actualizarDashboard();
 }
 
 async function abrirModalArreglo(ordenId) {

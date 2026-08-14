@@ -4,6 +4,8 @@
 let repuestoEditId = null;
 
 async function cargarInventario(busqueda = '') {
+  const tbody = document.getElementById('inventario-tbody');
+  if (tbody && !busqueda) tbody.innerHTML = skeletonRows(8,4);
   const todos = await dbGetAll('repuestos');
   const filtrados = todos.filter(r =>
     !busqueda ||
@@ -14,7 +16,7 @@ async function cargarInventario(busqueda = '') {
 
   const tbody = document.getElementById('inventario-tbody');
   if (!filtrados.length) {
-    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="ico">📦</div><h3>Sin repuestos</h3><p>Agrega tu primer repuesto al inventario</p></div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan='8'>${emptyState('📦','Sin repuestos en inventario','Agrega el primer repuesto para comenzar','+ Nuevo Repuesto','abrirModalRepuesto()')}</td></tr>`;
     return;
   }
 
@@ -60,6 +62,7 @@ function abrirModalRepuesto(id = null) {
 }
 
 async function guardarRepuesto() {
+  const btn = document.querySelector('#modal-repuesto .btn-primary');
   const data = {
     codigo:      document.getElementById('rep-codigo').value.trim(),
     nombre:      document.getElementById('rep-nombre').value.trim(),
@@ -72,15 +75,23 @@ async function guardarRepuesto() {
     notas:       document.getElementById('rep-notas').value.trim(),
   };
   if (!data.nombre) { showToast('El nombre es requerido', 'error'); return; }
-  if (repuestoEditId) {
-    await dbUpdate('repuestos', { ...data, id: repuestoEditId });
-    showToast('Repuesto actualizado', 'success');
-  } else {
-    await dbAdd('repuestos', data);
-    showToast('Repuesto agregado', 'success');
+  btnLoading(btn, 'Guardando...');
+  try {
+    if (repuestoEditId) {
+      await dbUpdate('repuestos', { ...data, id: repuestoEditId });
+      showToast('Repuesto actualizado', 'success');
+    } else {
+      await dbAdd('repuestos', data);
+      showToast('Repuesto agregado', 'success');
+    }
+    cerrarModal('modal-repuesto');
+    cargarInventario();
+  } catch(err) {
+    showToast('Error: ' + err.message, 'error');
+    console.error(err);
+  } finally {
+    btnReset(btn);
   }
-  cerrarModal('modal-repuesto');
-  cargarInventario();
 }
 
 async function editarRepuesto(id) { abrirModalRepuesto(id); }
