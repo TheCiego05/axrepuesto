@@ -133,72 +133,77 @@ async function previsualizarNcf() {
 
 async function confirmarFactura() {
   if (!facturaActual) return;
-  const btn = document.querySelector('#modal-facturar .btn-primary');
-  btnLoading(btn, 'Generando factura...');
+  const btn = document.getElementById('btn-confirmar-factura');
+  btnLoading(btn, 'Generando...');
+
   try {
+    let ncf = null, tipoNcf = null, formatoNcf = null;
 
-  let ncf = null;
-  let tipoNcf = null;
-  let formatoNcf = null;
+    const usarNcf = document.getElementById('fac-usar-ncf').checked;
+    if (usarNcf) {
+      const tipoSel = document.getElementById('fac-ncf-tipo').value;
+      if (!tipoSel) { showToast('Selecciona un tipo de comprobante', 'error'); btnReset(btn); return; }
+      const sec = await getSecuencia(tipoSel);
+      if (!sec || sec.actual > sec.hasta) { showToast('Secuencia agotada o no configurada', 'error'); btnReset(btn); return; }
+      ncf       = await getSiguienteNCF(tipoSel);
+      tipoNcf   = sec.nombre;
+      formatoNcf= sec.formato;
+    }
 
-  const usarNcf = document.getElementById('fac-usar-ncf').checked;
-  if (usarNcf) {
-    const tipoSel = document.getElementById('fac-ncf-tipo').value;
-    if (!tipoSel) { showToast('Selecciona un tipo de comprobante', 'error'); return; }
-    const sec = await getSecuencia(tipoSel);
-    if (!sec || sec.actual > sec.hasta) { showToast('Secuencia agotada', 'error'); return; }
-    ncf = await getSiguienteNCF(tipoSel);
-    tipoNcf = sec.nombre;
-    formatoNcf = sec.formato;
-  }
+    const numero = await generarNumeroFactura();
+    const negocio = {
+      nombre:    await getConfig('negocio_nombre') || '',
+      rnc:       await getConfig('negocio_rnc') || '',
+      telefono:  await getConfig('negocio_telefono') || '',
+      direccion: await getConfig('negocio_direccion') || '',
+    };
 
-  const numero = await generarNumeroFactura();
-  const config = {
-    nombre: await getConfig('negocio_nombre'),
-    rnc: await getConfig('negocio_rnc'),
-    telefono: await getConfig('negocio_telefono'),
-    direccion: await getConfig('negocio_direccion'),
-  };
+    const factura = {
+      numero,
+      orden_id:        facturaActual.orden.id,
+      cliente_id:      facturaActual.cliente?.id || null,
+      cliente_nombre:  document.getElementById('fac-cliente-nombre').value,
+      cliente_cedula:  document.getElementById('fac-cliente-cedula').value,
+      cliente_rnc:     document.getElementById('fac-cliente-rnc').value,
+      vehiculo_placa:  facturaActual.vehiculo?.placa || '',
+      vehiculo_desc:   `${facturaActual.vehiculo?.marca||''} ${facturaActual.vehiculo?.modelo||''} ${facturaActual.vehiculo?.anio||''}`.trim(),
+      arreglos:        facturaActual.arreglos,
+      subtotal:        facturaActual.subtotal,
+      itbis:           facturaActual.itbis,
+      itbis_pct:       facturaActual.itbisPct * 100,
+      total:           facturaActual.total,
+      ncf,
+      tipo_ncf:        tipoNcf,
+      formato_ncf:     formatoNcf,
+      metodo_pago:     document.getElementById('fac-metodo-pago').value || 'efectivo',
+      negocio,
+    };
 
-  const factura = {
-    numero,
-    orden_id: facturaActual.orden.id,
-    cliente_id: facturaActual.cliente?.id,
-    cliente_nombre: document.getElementById('fac-cliente-nombre').value,
-    cliente_cedula: document.getElementById('fac-cliente-cedula').value,
-    cliente_rnc: document.getElementById('fac-cliente-rnc').value,
-    vehiculo_placa: facturaActual.vehiculo?.placa,
-    vehiculo_desc: `${facturaActual.vehiculo?.marca||''} ${facturaActual.vehiculo?.modelo||''} ${facturaActual.vehiculo?.anio||''}`,
-    arreglos: facturaActual.arreglos,
-    subtotal: facturaActual.subtotal,
-    itbis: facturaActual.itbis,
-    itbis_pct: facturaActual.itbisPct * 100,
-    total: facturaActual.total,
-    ncf,
-    tipo_ncf: tipoNcf,
-    formato_ncf: formatoNcf,
-    metodo_pago: document.getElementById('fac-metodo-pago').value,
-    negocio: config,
-  };
+    const facturaId = await dbAdd('facturas', factura);
+    if (!facturaId) throw new Error('No se pudo guardar la factura');
 
-  const facturaId = await dbAdd('facturas', factura);
+    // Actualizar orden a entregado
+    await dbUpdate('ordenes', {
+      ...facturaActual.orden,
+      id: facturaActual.orden.id,
+      estado_orden: 'entregado',
+      factura_id: facturaId
+    });
 
-  // Marcar orden como completada
-  const orden = facturaActual.orden;
-  await dbUpdate('ordenes', { ...orden, id: orden.id, estado_orden: 'entregado', factura_id: facturaId });
-
-    // Registrar comisión del mecánico
-    const totalMO = facturaActual.arreglos?.reduce((s,a) => s+(a.manoObra||a.mano_obra||0),0) || 0;
-    await registrarComisionMecanico(facturaActual.orden.id, facturaId, totalMO);
+    // Comisión del mecánico
+    const totalMO = (facturaActual.arreglos||[]).reduce((s,a) => s + (a.manoObra||a.mano_obra||0), 0);
+    if (totalMO > 0) await registrarComisionMecanico(facturaActual.orden.id, facturaId, totalMO);
 
     cerrarModal('modal-facturar');
-    showToast('Factura generada: ' + numero, 'success');
-    cargarFacturas();
-    actualizarDashboard();
-    setTimeout(() => verFactura(facturaId), 300);
+    showToast('✅ Factura ' + numero + ' generada exitosamente', 'success');
+    if (typeof cargarFacturas === 'function') cargarFacturas();
+    if (typeof actualizarDashboard === 'function') actualizarDashboard();
+    if (typeof cargarOrdenes === 'function') cargarOrdenes();
+    setTimeout(() => verFactura(facturaId), 500);
+
   } catch(err) {
-    showToast('Error al generar factura: ' + err.message, 'error');
-    console.error(err);
+    console.error('Error en confirmarFactura:', err);
+    showToast('Error al generar factura: ' + (err.message||'Error desconocido'), 'error');
   } finally {
     btnReset(btn);
   }
