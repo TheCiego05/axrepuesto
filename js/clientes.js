@@ -4,8 +4,6 @@
 let clienteEditId = null;
 
 async function cargarClientes(busqueda = '') {
-  const tbody = document.getElementById('clientes-tbody');
-  if (tbody && !busqueda) tbody.innerHTML = '<tr>' + skeletonRows(6,4).replace(/<tr>/,'').replace(/<\/tr>/,'') + '</tr>';
   const todos = await dbGetAll('clientes');
   const filtrados = todos.filter(c =>
     !busqueda ||

@@ -13,8 +13,6 @@ const ESTADOS_ORDEN = [
 ];
 
 async function cargarOrdenes(busqueda='', filtroEstado='') {
-  const container = document.getElementById('ordenes-lista');
-  if (container && !busqueda && !filtroEstado) container.innerHTML = skeletonCards(3);
   const todas = await dbGetAll('ordenes');
   let filtradas = todas;
   if (busqueda) {

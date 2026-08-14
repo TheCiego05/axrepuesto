@@ -824,9 +824,8 @@
 </div>
 
 <!-- SCRIPTS -->
-<script src="js/utils.js"></script>
-  <script src="js/ux.js"></script>
 <script src="js/supabase.js"></script>
+<script src="js/utils.js"></script>
 <script src="js/app.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/clientes.js"></script>
@@ -839,6 +838,7 @@
 <script src="js/ia.js"></script>
 <script src="js/usuarios.js"></script>
 <script src="js/agenda.js"></script>
+<script src="js/ux.js"></script>
 <script>lucide.createIcons();</script>
 <div id="offline-banner" style="display:none;position:fixed;top:0;left:0;right:0;background:#ef4444;color:#fff;text-align:center;padding:6px;font-size:0.75rem;font-weight:600;z-index:999">
   📵 Sin conexión — mostrando datos en caché
@@ -847,5 +847,6 @@
 window.addEventListener('online',  () => document.getElementById('offline-banner').style.display='none');
 window.addEventListener('offline', () => document.getElementById('offline-banner').style.display='block');
 </script>
+<script>document.addEventListener("DOMContentLoaded",()=>{ if(window.lucide) lucide.createIcons(); });</script>
 </body>
 </html>
