@@ -52,8 +52,8 @@ if (-not (Test-Path ".git\refs\heads\main")) {
     git checkout main
 }
 
-# 5. Limpiar archivos obsoletos que ya no usa index.html
-$obsoletos = @("styles.css", "css/extra.css")
+# 5. Limpiar archivos obsoletos / restos sueltos que ya no usa index.html
+$obsoletos = @("styles.css", "css/extra.css", "config.js", "ordenes.js")
 foreach ($f in $obsoletos) {
     if (Test-Path $f) {
         git rm --cached --ignore-unmatch $f | Out-Null
