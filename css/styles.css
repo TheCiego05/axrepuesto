@@ -263,9 +263,9 @@ tbody td { padding: 9px 12px; font-size: 0.76rem; }
 
 /* ══ BADGES / PILLS ══ */
 .badge {
-  display: inline-flex; align-items: center; gap: 4px;
-  padding: 3px 8px; border-radius: 20px;
-  font-size: 0.6rem; font-weight: 600;
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 9px; border-radius: 20px;
+  font-size: 0.62rem; font-weight: 700; letter-spacing: 0.2px;
 }
 .badge::before { content: ''; width: 4px; height: 4px; border-radius: 50%; background: currentColor; }
 .badge-red    { background: rgba(0,158,237,0.08);  color: #009EED; border: 1px solid rgba(0,158,237,0.15); }
@@ -805,7 +805,7 @@ body.theme-dark .modal { background: #161b22; border-color: #30363d; }
 body.theme-dark .form-control { background: #1c2128; border-color: #30363d; color: #e6edf3; }
 body.theme-dark .orden-card { background: #161b22; border-color: #21262d; box-shadow: none; }
 body.theme-dark .orden-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
-body.theme-dark .stat-card .value { -webkit-text-fill-color: #e6edf3; background: none; }
+body.theme-dark .stat-card .value { color: #e6edf3; }
 body.theme-dark .arreglo-item { background: #1c2128; }
 body.theme-dark .toast { background: #161b22; }
 body.theme-dark .login-box { background: #161b22; }
@@ -816,7 +816,7 @@ body.theme-dark #panel-orden { background: #161b22; border-left-color: #21262d; 
 @media (max-width: 768px) {
   .nav-label-mobile { display: block; font-size: 0.55rem; font-weight: 600; }
   /* Hide desktop nav text, show mobile label */
-  .nav-item { overflow: hidden; white-space: nowrap; }
+  .nav-item { white-space: nowrap; }
 
   /* D3: Mechanic simplified order view */
   .mecanico-view .orden-header { flex-direction: column; align-items: flex-start; gap: 10px; }
