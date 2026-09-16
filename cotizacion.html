@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>Cotización de servicio</title>
+<link rel="icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="css/styles.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  body { display:block; overflow:auto; background:var(--bg); min-height:100vh; padding:24px 16px 60px; }
+  .cot-wrap { max-width:640px; margin:0 auto; }
+  .cot-card { background:#fff; border:1px solid var(--border); border-radius:12px; box-shadow:var(--shadow); overflow:hidden; }
+  .cot-header { padding:22px 24px; border-bottom:1px solid var(--border); }
+  .cot-header h1 { font-size:1.1rem; font-weight:800; color:var(--text); }
+  .cot-header p { font-size:0.75rem; color:var(--text2); margin-top:3px; }
+  .cot-body { padding:22px 24px; }
+  .cot-section { margin-bottom:20px; }
+  .cot-section h3 { font-size:0.65rem; font-weight:700; text-transform:uppercase; letter-spacing:0.8px; color:var(--text2); margin-bottom:8px; }
+  .cot-row { display:flex; justify-content:space-between; padding:7px 0; border-bottom:1px solid var(--border); font-size:0.82rem; }
+  .cot-row:last-child { border-bottom:none; }
+  .cot-row .desc strong { display:block; color:var(--text); }
+  .cot-row .desc span { font-size:0.7rem; color:var(--text2); }
+  .cot-totales .row { display:flex; justify-content:space-between; padding:4px 0; font-size:0.85rem; }
+  .cot-totales .row.total { font-weight:800; font-size:1.05rem; border-top:2px solid var(--red); margin-top:6px; padding-top:9px; color:var(--text); }
+  .cot-terminos { background:var(--bg3); border:1px solid var(--border); border-radius:8px; padding:14px; font-size:0.76rem; line-height:1.6; color:var(--text); white-space:pre-wrap; }
+  .cot-consent { border-top:1px solid var(--border); margin-top:6px; padding-top:18px; }
+  .cot-check { display:flex; align-items:flex-start; gap:8px; font-size:0.78rem; color:var(--text); margin-bottom:14px; cursor:pointer; }
+  .cot-check input { margin-top:3px; accent-color:var(--red); flex-shrink:0; }
+  .cot-actions { display:flex; gap:10px; }
+  .cot-actions .btn { flex:1; justify-content:center; padding:11px; font-size:0.8rem; }
+  .cot-status { text-align:center; padding:40px 24px; }
+  .cot-status .ico { font-size:2.6rem; margin-bottom:10px; }
+  .cot-status h2 { font-size:1.05rem; margin-bottom:6px; color:var(--text); }
+  .cot-status p { font-size:0.8rem; color:var(--text2); }
+  .cot-footer { text-align:center; padding:18px; font-size:0.68rem; color:var(--text3); }
+  #cot-loading { text-align:center; padding:60px 20px; color:var(--text2); font-size:0.85rem; }
+</style>
+</head>
+<body>
+<div class="cot-wrap">
+  <div id="cot-loading">Cargando cotización…</div>
+  <div id="cot-app" style="display:none">
+    <div class="cot-card">
+      <div class="cot-header">
+        <h1 id="cot-taller-nombre">Taller</h1>
+        <p id="cot-taller-meta"></p>
+      </div>
+      <div class="cot-body">
+        <div class="cot-section">
+          <h3>Orden de servicio</h3>
+          <div class="cot-row"><span>Cliente</span><strong id="cot-cliente"></strong></div>
+          <div class="cot-row"><span>Vehículo</span><strong id="cot-vehiculo"></strong></div>
+          <div class="cot-row"><span>Fecha de cotización</span><strong id="cot-fecha"></strong></div>
+        </div>
+
+        <div class="cot-section">
+          <h3>Detalle de la cotización</h3>
+          <div id="cot-arreglos"></div>
+          <div class="cot-totales mt-3">
+            <div class="row"><span>Subtotal</span><span id="cot-subtotal" class="mono"></span></div>
+            <div class="row"><span id="cot-itbis-label">ITBIS</span><span id="cot-itbis" class="mono"></span></div>
+            <div class="row total"><span>Total</span><span id="cot-total" class="mono"></span></div>
+          </div>
+        </div>
+
+        <div class="cot-section">
+          <h3>Términos y garantía</h3>
+          <div class="cot-terminos" id="cot-terminos"></div>
+        </div>
+
+        <div id="cot-consent-area" class="cot-consent">
+          <div class="form-group mt-2" style="margin-bottom:12px">
+            <label for="cot-nombre">Nombre completo (firma digital)</label>
+            <input id="cot-nombre" class="form-control" placeholder="Escribe tu nombre y apellido">
+          </div>
+          <label class="cot-check">
+            <input type="checkbox" id="cot-acepto-terminos">
+            He leído y estoy de acuerdo con los términos y la garantía descritos arriba.
+          </label>
+          <div class="form-group mt-2" style="margin-bottom:14px">
+            <label for="cot-comentario">Comentario (opcional)</label>
+            <textarea id="cot-comentario" class="form-control" rows="2" placeholder="Ej: motivo de rechazo, alguna aclaración..."></textarea>
+          </div>
+          <div class="cot-actions">
+            <button class="btn btn-danger" id="cot-btn-rechazar" onclick="responderCotizacion('rechazada')">❌ Rechazar</button>
+            <button class="btn btn-primary" id="cot-btn-aceptar" onclick="responderCotizacion('aceptada')">✅ Aprobar cotización</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="cot-footer">Enlace seguro y personal — no lo compartas con terceros.</div>
+  </div>
+
+  <div id="cot-resultado" class="cot-card" style="display:none">
+    <div class="cot-status">
+      <div class="ico" id="cot-resultado-ico">✅</div>
+      <h2 id="cot-resultado-titulo"></h2>
+      <p id="cot-resultado-desc"></p>
+    </div>
+  </div>
+
+  <div id="cot-error" class="cot-card" style="display:none">
+    <div class="cot-status">
+      <div class="ico">⚠️</div>
+      <h2>Enlace inválido</h2>
+      <p>Este enlace de cotización no existe o ya expiró. Contacta al taller para solicitar uno nuevo.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://jzomiywgrnpflakblnlh.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp6b21peXdncm5wZmxha2JsbmxoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY1NzkyODcsImV4cCI6MjEwMjE1NTI4N30.1sw15auGufaKIcUiW317knzB0hksoyS-BDhx7KZZWew';
+const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const params  = new URLSearchParams(location.search);
+const ordenId = parseInt(params.get('id'));
+const token   = params.get('t');
+let ordenActual = null;
+
+function formatMoney(n) { return 'RD$ ' + (n||0).toLocaleString('es-DO',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function formatDate(iso) { if (!iso) return '—'; return new Date(iso).toLocaleDateString('es-DO',{day:'2-digit',month:'2-digit',year:'numeric'}); }
+function esc(s) { return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+async function getConfigPublico(key) {
+  const { data } = await client.from('config').select('value').eq('key', key).single();
+  return data?.value || '';
+}
+
+async function init() {
+  if (!ordenId || !token) return mostrarError();
+
+  const { data: orden, error } = await client.from('ordenes').select('*').eq('id', ordenId).single();
+  if (error || !orden || orden.cotizacion_token !== token) return mostrarError();
+
+  ordenActual = orden;
+  document.getElementById('cot-loading').style.display = 'none';
+
+  const [tallerNombre, tallerTel, tallerDir, itbisPct] = await Promise.all([
+    getConfigPublico('negocio_nombre'),
+    getConfigPublico('negocio_telefono'),
+    getConfigPublico('negocio_direccion'),
+    getConfigPublico('itbis'),
+  ]);
+
+  document.getElementById('cot-taller-nombre').textContent = tallerNombre || 'Taller';
+  document.getElementById('cot-taller-meta').textContent   = [tallerDir, tallerTel].filter(Boolean).join(' · ');
+
+  document.getElementById('cot-cliente').textContent  = orden.cliente_nombre || '—';
+  document.getElementById('cot-vehiculo').textContent = `${orden.vehiculo_marca||''} ${orden.vehiculo_modelo||''} ${orden.vehiculo_placa?'· '+orden.vehiculo_placa:''}`.trim() || '—';
+  document.getElementById('cot-fecha').textContent    = formatDate(orden.cotizacion_enviada_en || orden.creado_en);
+
+  const arreglos = Array.isArray(orden.arreglos) ? orden.arreglos : [];
+  let subtotal = 0;
+  document.getElementById('cot-arreglos').innerHTML = arreglos.map(a => {
+    const manoObra = parseFloat(a.manoObra || a.mano_obra || 0);
+    const repuestos = (a.repuestos||[]);
+    const repTotal = repuestos.reduce((s,r)=> s + parseFloat(r.precio||0)*parseFloat(r.cantidad||1), 0);
+    const lineaTotal = manoObra + repTotal;
+    subtotal += lineaTotal;
+    const repStr = repuestos.map(r=>`${esc(r.nombre)} x${r.cantidad}`).join(', ');
+    return `<div class="cot-row"><div class="desc"><strong>${esc(a.descripcion)}</strong>${repStr?`<span>Repuestos: ${repStr}</span>`:''}</div><span class="mono">${formatMoney(lineaTotal)}</span></div>`;
+  }).join('') || '<p class="text-sm text-muted">Sin arreglos detallados</p>';
+
+  const pct = parseFloat(itbisPct || '18') / 100;
+  const itbis = subtotal * pct;
+  const total = subtotal + itbis;
+  document.getElementById('cot-subtotal').textContent   = formatMoney(subtotal);
+  document.getElementById('cot-itbis-label').textContent = `ITBIS (${Math.round(pct*100)}%)`;
+  document.getElementById('cot-itbis').textContent      = formatMoney(itbis);
+  document.getElementById('cot-total').textContent      = formatMoney(total);
+
+  document.getElementById('cot-terminos').textContent = orden.cotizacion_terminos || 'Sin términos y garantía especificados.';
+
+  if (orden.cotizacion_estado === 'aceptada' || orden.cotizacion_estado === 'rechazada') {
+    document.getElementById('cot-consent-area').style.display = 'none';
+    mostrarResultado(orden.cotizacion_estado, orden);
+  }
+
+  document.getElementById('cot-app').style.display = 'block';
+}
+
+function mostrarError() {
+  document.getElementById('cot-loading').style.display = 'none';
+  document.getElementById('cot-error').style.display = 'block';
+}
+
+function mostrarResultado(estado, orden) {
+  const ico    = document.getElementById('cot-resultado-ico');
+  const titulo = document.getElementById('cot-resultado-titulo');
+  const desc   = document.getElementById('cot-resultado-desc');
+  if (estado === 'aceptada') {
+    ico.textContent = '✅';
+    titulo.textContent = '¡Cotización aprobada!';
+    desc.textContent = `Gracias ${orden.cotizacion_firma_nombre||''}. El taller ya fue notificado y continuará con el servicio. Respondido el ${formatDate(orden.cotizacion_respondida_en)}.`;
+  } else {
+    ico.textContent = '❌';
+    titulo.textContent = 'Cotización rechazada';
+    desc.textContent = `Registramos tu respuesta, ${orden.cotizacion_firma_nombre||''}. Si deseas conversar sobre otras opciones, contáctanos directamente.`;
+  }
+  document.getElementById('cot-resultado').style.display = 'block';
+}
+
+async function responderCotizacion(decision) {
+  const nombre = document.getElementById('cot-nombre').value.trim();
+  if (!nombre) { alert('Escribe tu nombre completo para continuar.'); return; }
+  if (decision === 'aceptada' && !document.getElementById('cot-acepto-terminos').checked) {
+    alert('Debes marcar que aceptas los términos y garantía para aprobar la cotización.');
+    return;
+  }
+  const comentario = document.getElementById('cot-comentario').value.trim();
+
+  const btnAceptar  = document.getElementById('cot-btn-aceptar');
+  const btnRechazar = document.getElementById('cot-btn-rechazar');
+  btnAceptar.disabled = true; btnRechazar.disabled = true;
+
+  const { error } = await client.from('ordenes').update({
+    cotizacion_estado:        decision,
+    cotizacion_respondida_en: new Date().toISOString(),
+    cotizacion_firma_nombre:  nombre,
+    cotizacion_comentario:    comentario || null,
+  }).eq('id', ordenId).eq('cotizacion_token', token).eq('cotizacion_estado', 'pendiente');
+
+  if (error) {
+    alert('No se pudo registrar tu respuesta. Intenta de nuevo o contacta al taller.');
+    btnAceptar.disabled = false; btnRechazar.disabled = false;
+    return;
+  }
+
+  document.getElementById('cot-consent-area').style.display = 'none';
+  mostrarResultado(decision, { ...ordenActual, cotizacion_firma_nombre: nombre, cotizacion_respondida_en: new Date().toISOString() });
+}
+
+init();
+</script>
+</body>
+</html>

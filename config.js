@@ -24,7 +24,6 @@ async function cargarConfig() {
   document.getElementById('cfg-telefono').value  = await getConfig('negocio_telefono') || '';
   document.getElementById('cfg-direccion').value = await getConfig('negocio_direccion') || '';
   document.getElementById('cfg-itbis').value     = await getConfig('itbis') || '18';
-  document.getElementById('cfg-terminos').value  = await getConfig('terminos_garantia') || '';
 
   await cargarSecuencias();
   await cargarConfigECF();
@@ -37,7 +36,6 @@ async function guardarConfigNegocio() {
   await setConfig('negocio_telefono', document.getElementById('cfg-telefono').value.trim());
   await setConfig('negocio_direccion', document.getElementById('cfg-direccion').value.trim());
   await setConfig('itbis', document.getElementById('cfg-itbis').value.trim());
-  await setConfig('terminos_garantia', document.getElementById('cfg-terminos').value.trim());
   showToast('Configuración guardada', 'success');
 }
 

@@ -13,8 +13,6 @@ const ESTADOS_ORDEN = [
 ];
 
 async function cargarOrdenes(busqueda='', filtroEstado='') {
-  const container0 = document.getElementById('ordenes-lista');
-  if (container0 && !container0.children.length) container0.innerHTML = skeletonCards(4);
   const todas = await dbGetAll('ordenes');
   let filtradas = todas;
   if (busqueda) {
@@ -51,11 +49,9 @@ async function cargarOrdenes(busqueda='', filtroEstado='') {
         </div>
         <div class="orden-meta" style="gap:6px">
           ${badgeEstadoOrden(o.estado_orden)}
-          ${badgeCotizacion(o)}
           <select class="form-control" style="width:160px;font-size:0.72rem;padding:4px 6px" onchange="event.stopPropagation();cambiarEstadoOrden(${o.id},this.value)" onclick="event.stopPropagation()">
             ${ESTADOS_ORDEN.map(e => `<option value="${e.key}" ${o.estado_orden===e.key?'selected':''}>${e.label}</option>`).join('')}
           </select>
-          <button class="btn btn-sm btn-green" onclick="event.stopPropagation();enviarCotizacionWhatsApp(${o.id})">📲 Cotización</button>
           ${o.estado_orden === 'listo' || o.estado_orden === 'entregado' ? `<button class="btn btn-sm btn-primary" onclick="event.stopPropagation();facturarOrden(${o.id})">🧾 Facturar</button>` : ''}
           <button class="btn btn-sm btn-ghost" onclick="event.stopPropagation();editarOrden(${o.id})">✏️</button>
           <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();eliminarOrden(${o.id})">🗑️</button>
@@ -336,77 +332,4 @@ async function eliminarOrden(id) {
   showToast('Orden eliminada','info');
   cargarOrdenes();
   actualizarDashboard();
-}
-
-// ============================================================
-// COTIZACIÓN POR WHATSAPP — enlace público de aprobación
-// ============================================================
-function generarTokenCotizacion() {
-  return Array.from(crypto.getRandomValues(new Uint8Array(16)))
-    .map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
-function badgeCotizacion(orden) {
-  const map = {
-    pendiente: { cls: 'badge-blue',  label: '📲 Cotización enviada' },
-    aceptada:  { cls: 'badge-green', label: '✅ Cliente aprobó' },
-    rechazada: { cls: 'badge-red',   label: '❌ Cliente rechazó' },
-  };
-  const info = map[orden.cotizacion_estado];
-  return info ? `<span class="badge ${info.cls}">${info.label}</span>` : '';
-}
-
-async function enviarCotizacionWhatsApp(ordenId) {
-  const orden = await dbGet('ordenes', ordenId);
-  if (!orden) { showToast('Orden no encontrada', 'error'); return; }
-  if (!orden.arreglos || !orden.arreglos.length) {
-    showToast('Agrega al menos un arreglo antes de enviar la cotización', 'error');
-    return;
-  }
-  if (!orden.cliente_id) { showToast('Esta orden no tiene un cliente asociado', 'error'); return; }
-  const cliente = await dbGet('clientes', orden.cliente_id);
-  if (!cliente) { showToast('Cliente no encontrado', 'error'); return; }
-
-  // Abrimos la pestaña ya (dentro del gesto de clic) para que el navegador no la bloquee
-  const winRef = window.open('', '_blank');
-
-  try {
-    const token     = generarTokenCotizacion();
-    const terminos  = await getConfig('terminos_garantia') || '';
-    const tallerNom = await getConfig('negocio_nombre') || 'nuestro taller';
-
-    await dbUpdate('ordenes', {
-      ...orden,
-      cotizacion_token:        token,
-      cotizacion_estado:       'pendiente',
-      cotizacion_terminos:     terminos,
-      cotizacion_enviada_en:   new Date().toISOString(),
-      cotizacion_respondida_en: null,
-      cotizacion_firma_nombre:  null,
-      cotizacion_comentario:    null,
-    });
-
-    const link = new URL(`cotizacion.html?id=${ordenId}&t=${token}`, window.location.href).toString();
-    const vehiculo = `${orden.vehiculo_marca || ''} ${orden.vehiculo_modelo || ''}`.trim() || 'tu vehículo';
-    const mensaje = `Hola ${cliente.nombre || ''} 👋, te compartimos la cotización de servicio para ${vehiculo}` +
-      `${orden.vehiculo_placa ? ' (' + orden.vehiculo_placa + ')' : ''} en *${tallerNom}*.\n\n` +
-      `📋 Revisa el detalle, los términos y garantía, y apruébala aquí:\n${link}\n\n` +
-      `Cualquier duda, respóndenos por este medio.`;
-
-    const telDigits = (cliente.telefono || '').replace(/\D/g, '');
-    const telIntl = telDigits.length === 10 ? '1' + telDigits : telDigits; // RD usa código de país 1
-    const waUrl = telIntl
-      ? `https://wa.me/${telIntl}?text=${encodeURIComponent(mensaje)}`
-      : `https://wa.me/?text=${encodeURIComponent(mensaje)}`;
-
-    if (winRef) winRef.location.href = waUrl;
-    else window.open(waUrl, '_blank');
-
-    cargarOrdenes();
-    showToast('Cotización generada y enviada a WhatsApp', 'success');
-  } catch (err) {
-    if (winRef) winRef.close();
-    console.error(err);
-    showToast('Error generando la cotización: ' + err.message, 'error');
-  }
 }
