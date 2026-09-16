@@ -430,6 +430,14 @@
         <button class="btn btn-primary mt-4 w-full" onclick="guardarConfigNegocio()">💾 Guardar</button>
       </div>
       <div class="table-wrap" style="padding:20px">
+        <h3 style="margin-bottom:6px;font-size:1rem">📋 Términos y Garantía</h3>
+        <p class="text-xs text-muted mt-2" style="margin-bottom:10px">Este texto se adjunta a cada cotización que envíes por WhatsApp. Al cambiarlo, solo afecta las cotizaciones nuevas que envíes de aquí en adelante.</p>
+        <div class="form-group">
+          <textarea id="cfg-terminos" class="form-control" rows="7" placeholder="Ej: Esta cotización es válida por 15 días. La mano de obra tiene garantía de 30 días..."></textarea>
+        </div>
+        <button class="btn btn-primary mt-3 w-full" onclick="guardarConfigNegocio()">💾 Guardar</button>
+      </div>
+      <div class="table-wrap" style="padding:20px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
           <h3 style="font-size:1rem">🔢 Secuencias de Comprobantes</h3>
           <button class="btn btn-sm btn-primary" onclick="abrirModalSecuencia()">+ Agregar</button>
