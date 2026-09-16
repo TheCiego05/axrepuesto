@@ -160,10 +160,10 @@
       <input class="search-input" style="flex:1;min-width:200px" placeholder="Buscar por cliente, placa..." oninput="cargarOrdenes(this.value, document.getElementById('filtro-estado').value)">
       <select id="filtro-estado" class="form-control" style="width:180px" onchange="cargarOrdenes(document.querySelector('#page-ordenes .search-input').value,this.value)">
         <option value="">Todos los estados</option>
-        <option value="recibido">🔵 Recibido</option>
-        <option value="en_taller">🔧 En Taller</option>
-        <option value="listo">✅ Listo</option>
-        <option value="entregado">🚗 Entregado</option>
+        <option value="recibido">Recibido</option>
+        <option value="en_taller">En Taller</option>
+        <option value="listo">Listo</option>
+        <option value="entregado">Entregado</option>
       </select>
       <div style="display:flex;gap:6px">
         <button class="btn btn-sm btn-ghost" onclick="toggleVistaOrdenes('lista')" id="btn-vista-lista">☰ Lista</button>
@@ -1057,7 +1057,7 @@
             <select id="turno-estado" class="form-control">
               <option value="pendiente">⏳ Pendiente</option>
               <option value="confirmado">✅ Confirmado</option>
-              <option value="cancelado">❌ Cancelado</option>
+              <option value="cancelado">Cancelado</option>
             </select>
           </div>
         </div>

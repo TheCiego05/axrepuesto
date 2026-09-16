@@ -107,10 +107,11 @@ async function actualizarDashboard() {
 // Estados de ORDEN (nivel macro)
 function badgeEstadoOrden(estado) {
   const map = {
-    recibido:  '<span class="badge badge-blue">🔵 Recibido</span>',
-    en_taller: '<span class="badge badge-yellow">🔧 En Taller</span>',
-    listo:     '<span class="badge badge-green">✅ Listo</span>',
-    entregado: '<span class="badge badge-gray">🚗 Entregado</span>',
+    recibido:  '<span class="badge badge-blue">Recibido</span>',
+    en_taller: '<span class="badge badge-yellow">En Taller</span>',
+    listo:     '<span class="badge badge-green">Listo</span>',
+    entregado: '<span class="badge badge-gray">Entregado</span>',
+    cancelado: '<span class="badge badge-red">Cancelado</span>',
   };
   return map[estado] || `<span class="badge badge-gray">${estado||'—'}</span>`;
 }
