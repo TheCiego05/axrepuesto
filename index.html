@@ -797,6 +797,13 @@
         </div>
       </div>
 
+      <!-- Pago -->
+      <div class="form-group" style="margin-bottom:14px">
+        <label>Monto pagado ahora (RD$)</label>
+        <input id="fac-monto-pagado" class="form-control" type="number" step="0.01" oninput="actualizarSaldoFac()">
+        <p class="text-xs text-muted mt-2" id="fac-saldo-info"></p>
+      </div>
+
       <!-- Cliente -->
       <div class="form-grid form-grid-2" style="margin-bottom:14px">
         <div class="form-group" style="grid-column:1/-1">
