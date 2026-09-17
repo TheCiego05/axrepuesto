@@ -87,6 +87,8 @@ async function facturarOrden(ordenId) {
     document.getElementById('fac-itbis-monto').textContent    = formatMoney(itbis);
     document.getElementById('fac-total').textContent          = formatMoney(total);
     document.getElementById('fac-itbis-pct').textContent      = Math.round(itbisPct * 100) + '%';
+    document.getElementById('fac-monto-pagado').value         = total.toFixed(2);
+    actualizarSaldoFac();
 
     // Arreglos
     const listaArr = document.getElementById('fac-arreglos-lista');
@@ -165,6 +167,20 @@ async function cargarSecuenciasFac() {
   }
 }
 
+function actualizarSaldoFac() {
+  const info = document.getElementById('fac-saldo-info');
+  if (!info || !facturaActual) return;
+  const pagado = parseFloat(document.getElementById('fac-monto-pagado')?.value) || 0;
+  const saldo = facturaActual.total - pagado;
+  if (saldo > 0.009) {
+    info.textContent = `Queda pendiente ${formatMoney(saldo)} — se creará una cuenta por cobrar.`;
+    info.style.color = 'var(--red)';
+  } else {
+    info.textContent = 'Factura pagada en su totalidad.';
+    info.style.color = 'var(--green)';
+  }
+}
+
 function toggleNcfFac() {
   const usar = document.getElementById('fac-usar-ncf')?.checked;
   const sec  = document.getElementById('seccion-ncf');
@@ -174,6 +190,12 @@ function toggleNcfFac() {
 // ---- CONFIRMAR Y GUARDAR FACTURA ----
 async function confirmarFactura() {
   if (!facturaActual) { showToast('No hay factura activa', 'error'); return; }
+
+  const montoPagado = parseFloat(document.getElementById('fac-monto-pagado')?.value) || 0;
+  if (montoPagado < 0 || montoPagado > facturaActual.total + 0.01) {
+    showToast('El monto pagado debe estar entre 0 y el total de la factura', 'error');
+    return;
+  }
 
   const btn = document.getElementById('btn-confirmar-factura');
   btnLoading(btn, 'Generando...');
@@ -255,6 +277,28 @@ async function confirmarFactura() {
     await getClient().from('ordenes')
       .update({ estado_orden: 'entregado', factura_id: facturaId })
       .eq('id', facturaActual.orden.id);
+
+    // Si no se pagó el total, dejar el saldo en Cuentas por Cobrar
+    const saldoPendiente = facturaActual.total - montoPagado;
+    if (saldoPendiente > 0.009) {
+      const cuentaId = await dbAdd('cuentas_cobrar', {
+        factura_id:     facturaId,
+        cliente_id:     facturaActual.cliente?.id || null,
+        cliente_nombre: factura.cliente_nombre || 'Cliente',
+        monto_total:    facturaActual.total,
+        monto_pagado:   montoPagado,
+        estado:         montoPagado > 0 ? 'parcial' : 'pendiente',
+      });
+      if (montoPagado > 0) {
+        await dbAdd('pagos', {
+          cuenta_cobrar_id: cuentaId,
+          factura_id:       facturaId,
+          monto:            montoPagado,
+          metodo_pago:      factura.metodo_pago,
+          referencia:       factura.referencia || '',
+        });
+      }
+    }
 
     // Comisión mecánico
     const totalMO = facturaActual.arreglos.reduce((s,a) => s + parseFloat(a.manoObra||a.mano_obra||0), 0);
