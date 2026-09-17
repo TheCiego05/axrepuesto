@@ -18,9 +18,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const originalHandler = input.getAttribute('oninput');
       if (!originalHandler) return;
       input.removeAttribute('oninput');
-      input.addEventListener('input', debounce((e) => {
-        eval(originalHandler.replace('this.value', `'${e.target.value}'`));
-      }, 350));
+      // Compilamos el handler UNA vez a partir del atributo fijo del HTML
+      // (nunca del texto que escribe el usuario) y lo invocamos con `this`
+      // apuntando al input, para que `this.value` funcione tal cual.
+      const fn = new Function('event', originalHandler);
+      input.addEventListener('input', debounce((e) => fn.call(input, e), 350));
     });
   }, 1000);
 });

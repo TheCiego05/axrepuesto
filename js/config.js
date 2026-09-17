@@ -345,16 +345,27 @@ async function cargarConfigECF() {
   const razon     = await getConfig('ecf_razon') || '';
   const formato   = await getConfig('ecf_formato') || 'eCF';
   const entorno   = await getConfig('ecf_entorno') || 'test';
-  const siguiente = await getConfig('ecf_siguiente') || '1';
-  const sigB01    = await getConfig('ecf_siguiente_b01') || '1';
   const habilitado= await getConfig('ecf_habilitado') || 'false';
+
+  // El número "siguiente" mostrado debe ser el contador real de la
+  // secuencia (si ya existe), no el valor guardado en config — ese solo
+  // se usa una vez, para crearla la primera vez.
+  const [secE32, secB01] = await Promise.all([getSecuencia('e32'), getSecuencia('B01')]);
+  const siguiente = secE32 ? String(secE32.actual) : (await getConfig('ecf_siguiente') || '1');
+  const sigB01    = secB01 ? String(secB01.actual) : (await getConfig('ecf_siguiente_b01') || '1');
 
   if (document.getElementById('ecf-rnc'))         document.getElementById('ecf-rnc').value         = rnc;
   if (document.getElementById('ecf-razon'))        document.getElementById('ecf-razon').value        = razon;
   if (document.getElementById('ecf-formato'))      document.getElementById('ecf-formato').value      = formato;
   if (document.getElementById('ecf-entorno'))      document.getElementById('ecf-entorno').value      = entorno;
-  if (document.getElementById('ecf-siguiente'))    document.getElementById('ecf-siguiente').value    = siguiente;
-  if (document.getElementById('ecf-siguiente-b01'))document.getElementById('ecf-siguiente-b01').value= sigB01;
+  if (document.getElementById('ecf-siguiente')) {
+    document.getElementById('ecf-siguiente').value    = siguiente;
+    document.getElementById('ecf-siguiente').disabled = !!secE32;
+  }
+  if (document.getElementById('ecf-siguiente-b01')) {
+    document.getElementById('ecf-siguiente-b01').value    = sigB01;
+    document.getElementById('ecf-siguiente-b01').disabled = !!secB01;
+  }
   if (document.getElementById('ecf-habilitado'))   document.getElementById('ecf-habilitado').checked = habilitado === 'true';
 
   // Actualizar mensaje de estado
@@ -392,19 +403,28 @@ async function guardarConfigECF() {
   await setConfig('ecf_siguiente_b01', sigB01);
   await setConfig('ecf_habilitado',    habilitado);
 
-  // Crear secuencias automáticamente según el formato
+  // Crear secuencias automáticamente según el formato. Si la secuencia ya
+  // existe, NUNCA se toca "actual" aquí — solo al crearla por primera vez.
+  // Reescribirlo en cada guardado reiniciaría el contador y causaría
+  // NCF/e-CF duplicados en facturas ya emitidas con esa secuencia.
   if (formato === 'eCF' || formato === 'ambos') {
+    const existente = await getSecuencia('e32');
     await upsertSecuencia({
       tipo: 'e32', nombre: 'Consumidor Final', formato: 'eCF',
-      desde: parseInt(siguiente), hasta: parseInt(siguiente) + 999,
-      actual: parseInt(siguiente), activa: habilitado === 'true'
+      desde:  existente ? existente.desde  : parseInt(siguiente),
+      hasta:  existente ? existente.hasta  : parseInt(siguiente) + 999,
+      actual: existente ? existente.actual : parseInt(siguiente),
+      activa: habilitado === 'true'
     });
   }
   if (formato === 'NCF' || formato === 'ambos') {
+    const existenteB01 = await getSecuencia('B01');
     await upsertSecuencia({
       tipo: 'B01', nombre: 'Crédito Fiscal', formato: 'NCF',
-      desde: parseInt(sigB01), hasta: parseInt(sigB01) + 999,
-      actual: parseInt(sigB01), activa: habilitado === 'true'
+      desde:  existenteB01 ? existenteB01.desde  : parseInt(sigB01),
+      hasta:  existenteB01 ? existenteB01.hasta  : parseInt(sigB01) + 999,
+      actual: existenteB01 ? existenteB01.actual : parseInt(sigB01),
+      activa: habilitado === 'true'
     });
   }
 
