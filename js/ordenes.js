@@ -84,6 +84,7 @@ function renderArreglos(orden) {
       <div class="arreglo-desc">
         <strong>${a.descripcion}</strong>
         <span>Mano de obra: ${formatMoney(a.manoObra || a.mano_obra || 0)}${repStr?' · Repuestos: '+repStr:''}</span>
+        <span style="display:block;font-size:0.7rem;color:var(--text2);margin-top:2px">🔧 ${a.mecanico_nombre ? a.mecanico_nombre : 'Sin mecánico asignado'}</span>
         ${a.notas?`<span style="color:var(--text2);display:block;font-size:0.72rem">📝 ${a.notas}</span>`:''}
       </div>
       <div class="arreglo-actions">
@@ -197,22 +198,27 @@ async function cargarVehiculosOrden(clienteId) {
     vehiculos.map(v=>`<option value="${v.id}">${v.marca} ${v.modelo} ${v.anio||''} — ${v.placa||'S/P'}</option>`).join('');
 }
 
-function abrirFormArreglo() {
+async function abrirFormArreglo() {
   ['at-descripcion','at-mano-obra','at-notas'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = id === 'at-mano-obra' ? '0' : '';
   });
+  await poblarSelectsMecanicos();
   abrirModal('modal-arreglo-temp');
 }
 
 function guardarArregloTemp() {
   const desc = document.getElementById('at-descripcion').value.trim();
   if (!desc) { showToast('Descripción requerida', 'error'); return; }
+  const mecSel = document.getElementById('at-mecanico');
+  const mecOpt = mecSel?.options[mecSel?.selectedIndex];
   arreglosTemp.push({
     descripcion: desc,
     manoObra: parseFloat(document.getElementById('at-mano-obra').value)||0,
     notas: document.getElementById('at-notas').value.trim(),
     estado: 'en_proceso', repuestos: [],
+    mecanico_id: mecSel?.value ? parseInt(mecSel.value) : null,
+    mecanico_nombre: mecSel?.value ? mecOpt.dataset.nombre : '',
   });
   cerrarModal('modal-arreglo-temp');
   renderArreglosTemp();
@@ -226,7 +232,7 @@ function renderArreglosTemp() {
   }
   c.innerHTML = arreglosTemp.map((a,i) => `
     <div class="arreglo-item">
-      <div class="arreglo-desc"><strong>${a.descripcion}</strong><span>${formatMoney(a.manoObra)}</span></div>
+      <div class="arreglo-desc"><strong>${a.descripcion}</strong><span>${formatMoney(a.manoObra)}${a.mecanico_nombre?' · 🔧 '+a.mecanico_nombre:''}</span></div>
       <div class="arreglo-actions"><button class="btn btn-xs btn-danger" onclick="eliminarArregloTemp(${i})">🗑️</button></div>
     </div>`).join('');
 }
@@ -292,6 +298,7 @@ async function abrirModalArreglo(ordenId) {
   const sel = document.getElementById('are-repuesto');
   sel.innerHTML = '<option value="">— Sin repuesto —</option>' +
     repuestos.map(r=>`<option value="${r.id}" data-precio="${r.precio_venta}">${r.nombre} (Stock: ${r.stock})</option>`).join('');
+  await poblarSelectsMecanicos();
   abrirModal('modal-arreglo-existente');
 }
 
@@ -308,11 +315,15 @@ async function guardarArregloExistente() {
     await dbUpdate('repuestos', { ...rep, stock: (rep.stock||0) - cant });
   }
   if (!orden.arreglos) orden.arreglos = [];
+  const mecSel = document.getElementById('are-mecanico');
+  const mecOpt = mecSel?.options[mecSel?.selectedIndex];
   orden.arreglos.push({
     descripcion: desc,
     manoObra:    parseFloat(document.getElementById('are-mano-obra').value)||0,
     notas:       document.getElementById('are-notas').value.trim(),
     estado:      'en_proceso', repuestos,
+    mecanico_id:     mecSel?.value ? parseInt(mecSel.value) : null,
+    mecanico_nombre: mecSel?.value ? mecOpt.dataset.nombre : '',
   });
   await dbUpdate('ordenes', orden);
   cerrarModal('modal-arreglo-existente');

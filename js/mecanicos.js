@@ -54,7 +54,7 @@ async function poblarSelectsMecanicos(mecanicos = null) {
   const opts = '<option value="">— Seleccionar mecánico —</option>' +
     mecanicos.map(m => `<option value="${m.id}" data-nombre="${m.nombre} ${m.apellido||''}">${m.nombre} ${m.apellido||''} · ${m.especialidad||'General'}</option>`).join('');
 
-  ['ord-mecanico', 'turno-mecanico'].forEach(id => {
+  ['ord-mecanico', 'turno-mecanico', 'at-mecanico', 'are-mecanico'].forEach(id => {
     const sel = document.getElementById(id);
     if (sel) sel.innerHTML = opts;
   });
