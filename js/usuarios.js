@@ -5,7 +5,6 @@ let usuarioEditId = null;
 
 async function cargarUsuarios() {
   cargarAuditLog();
-  cargarSesionesActivas();
   const u = getUsuarioActual();
   if (!esRol('super_admin','gerente')) {
     document.getElementById('usuarios-tbody').innerHTML =
@@ -138,54 +137,3 @@ function iconAudit(accion) {
   return map[accion] || '📌';
 }
 
-// ---- SESIONES ACTIVAS ----
-async function cargarSesionesActivas() {
-  const lista = document.getElementById('sesiones-lista');
-  if (!lista) return;
-
-  try {
-    const { data } = await getClient()
-      .from('sesiones')
-      .select('*, usuarios(nombre, email)')
-      .gt('expira_en', new Date().toISOString())
-      .order('creado_en', { ascending: false });
-
-    if (!data?.length) {
-      lista.innerHTML = '<p class="text-sm text-muted">Sin sesiones activas</p>';
-      return;
-    }
-
-    lista.innerHTML = data.map(s => `
-      <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);font-size:0.78rem">
-        <div class="avatar" style="width:28px;height:28px;border-radius:6px;background:var(--red);color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;flex-shrink:0">
-          ${(s.usuarios?.nombre||'?').charAt(0).toUpperCase()}
-        </div>
-        <div style="flex:1">
-          <strong>${s.usuarios?.nombre || '—'}</strong>
-          <span class="text-muted"> · ${s.usuarios?.email || ''}</span>
-          <div class="text-xs text-muted">Expira: ${formatDateTime(s.expira_en)}</div>
-        </div>
-        <button class="btn btn-xs btn-danger" onclick="cerrarSesion('${s.token}')">Cerrar</button>
-      </div>`).join('');
-  } catch(e) {
-    lista.innerHTML = '<p class="text-sm text-muted">Error cargando sesiones</p>';
-  }
-}
-
-async function cerrarSesion(token) {
-  await getClient().from('sesiones').delete().eq('token', token);
-  showToast('Sesión cerrada', 'info');
-  cargarSesionesActivas();
-}
-
-async function cerrarTodasSesiones() {
-  if (!await confirmar('¿Cerrar todas las sesiones activas? Todos los usuarios deberán volver a iniciar sesión.')) return;
-  const u = getUsuarioActual();
-  const miToken = sessionStorage.getItem('llave10_token');
-  // Keep current session, close all others
-  await getClient().from('sesiones')
-    .delete()
-    .neq('token', miToken || '');
-  showToast('Todas las sesiones cerradas', 'info');
-  cargarSesionesActivas();
-}

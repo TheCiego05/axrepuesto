@@ -9,6 +9,14 @@ async function enviarMensajeIA() {
   const msg   = input.value.trim();
   if (!msg) return;
 
+  const apiKey = localStorage.getItem('llave10_ia_key') || '';
+  if (!apiKey) {
+    agregarMensajeIA('user', msg);
+    agregarMensajeIA('ai', '⚠️ Todavía no configuraste tu clave de Anthropic. Pégala abajo en "API Key IA" y guárdala para poder usar el asistente.');
+    input.value = '';
+    return;
+  }
+
   input.value = '';
   agregarMensajeIA('user', msg);
   agregarMensajeIA('ai', '...pensando...', true);
@@ -31,9 +39,14 @@ diagnósticos de vehículos, mantenimiento preventivo, checklists técnicos, rec
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
+        model: 'claude-sonnet-5',
         max_tokens: 1000,
         system: contexto,
         messages: iaHistorial.slice(-8), // últimos 8 turnos
@@ -41,20 +54,26 @@ diagnósticos de vehículos, mantenimiento preventivo, checklists técnicos, rec
     });
 
     const data = await response.json();
-    const respuesta = data.content?.[0]?.text || 'No pude procesar la respuesta.';
-    iaHistorial.push({ role: 'assistant', content: respuesta });
-
-    // Reemplazar "pensando..."
     const msgs = document.getElementById('ia-messages');
     const loading = msgs.querySelector('.loading');
     if (loading) loading.remove();
+
+    if (!response.ok) {
+      const detalle = data?.error?.message || `Error ${response.status}`;
+      iaHistorial.pop(); // no contar este turno en el historial
+      agregarMensajeIA('ai', `⚠️ ${response.status === 401 ? 'Tu API key no es válida.' : 'Error al conectar con el asistente: ' + detalle}`);
+      return;
+    }
+
+    const respuesta = data.content?.[0]?.text || 'No pude procesar la respuesta.';
+    iaHistorial.push({ role: 'assistant', content: respuesta });
     agregarMensajeIA('ai', respuesta);
 
   } catch (err) {
     const msgs = document.getElementById('ia-messages');
     const loading = msgs.querySelector('.loading');
     if (loading) loading.remove();
-    agregarMensajeIA('ai', '⚠️ Error al conectar con el asistente. Verifica la configuración de la API key en Settings → Asistente IA.');
+    agregarMensajeIA('ai', '⚠️ Error de conexión con el asistente. Intenta de nuevo en un momento.');
   }
 }
 
