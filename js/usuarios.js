@@ -42,12 +42,23 @@ function badgeRol(rolId) {
 function abrirModalUsuario(id=null) {
   usuarioEditId = id;
   document.getElementById('modal-usuario-titulo').textContent = id ? 'Editar Usuario' : 'Nuevo Usuario';
-  if (!id) { document.querySelector('#modal-usuario .form-grid').reset?.(); abrirModal('modal-usuario'); return; }
+  const notaPassword = document.getElementById('usr-password-nota');
+  const emailInput   = document.getElementById('usr-email');
+  if (!id) {
+    document.getElementById('usr-nombre').value = '';
+    document.getElementById('usr-email').value  = '';
+    document.getElementById('usr-rol').value    = '2';
+    notaPassword.style.display = 'block';
+    emailInput.disabled = false;
+    abrirModal('modal-usuario');
+    return;
+  }
   dbGet('usuarios', id).then(u => {
-    document.getElementById('usr-nombre').value   = u.nombre||'';
-    document.getElementById('usr-email').value    = u.email||'';
-    document.getElementById('usr-rol').value      = u.rol_id||2;
-    document.getElementById('usr-password').value = '';
+    document.getElementById('usr-nombre').value = u.nombre||'';
+    document.getElementById('usr-email').value  = u.email||'';
+    document.getElementById('usr-rol').value    = u.rol_id||2;
+    notaPassword.style.display = 'none';
+    emailInput.disabled = true; // el email de Auth no se cambia desde aquí
     abrirModal('modal-usuario');
   });
 }
@@ -55,31 +66,32 @@ function abrirModalUsuario(id=null) {
 async function editarUsuario(id) { abrirModalUsuario(id); }
 
 async function guardarUsuario() {
-  const nombre   = document.getElementById('usr-nombre').value.trim();
-  const email    = document.getElementById('usr-email').value.trim();
-  const rolId    = parseInt(document.getElementById('usr-rol').value);
-  const password = document.getElementById('usr-password').value;
+  const btn    = document.querySelector('#modal-usuario .btn-primary');
+  const nombre = document.getElementById('usr-nombre').value.trim();
+  const email  = document.getElementById('usr-email').value.trim();
+  const rolId  = parseInt(document.getElementById('usr-rol').value);
   if (!nombre || !email) { showToast('Nombre y email requeridos','error'); return; }
 
-  let passwordHash = null;
-  if (password) {
-    const enc  = new TextEncoder();
-    const buf  = await crypto.subtle.digest('SHA-256', enc.encode(password));
-    passwordHash = Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+  btnLoading(btn, 'Guardando...');
+  try {
+    if (usuarioEditId) {
+      await dbUpdate('usuarios', { id: usuarioEditId, nombre, rol_id: rolId });
+      showToast('Usuario actualizado','success');
+    } else {
+      const { error } = await getClient().rpc('crear_usuario_con_auth', {
+        p_email: email, p_nombre: nombre, p_rol_id: rolId,
+      });
+      if (error) { showToast('Error: ' + error.message, 'error'); return; }
+      await enviarRecuperacionPassword(email);
+      showToast('Usuario creado. Le enviamos un correo para configurar su contraseña.', 'success');
+    }
+    cerrarModal('modal-usuario');
+    cargarUsuarios();
+  } catch(err) {
+    showToast('Error: ' + err.message, 'error');
+  } finally {
+    btnReset(btn);
   }
-
-  const data = { nombre, email, rol_id: rolId, activo: true };
-  if (passwordHash) data.password_hash = passwordHash;
-
-  if (usuarioEditId) {
-    await dbUpdate('usuarios', { ...data, id: usuarioEditId });
-    showToast('Usuario actualizado','success');
-  } else {
-    await dbAdd('usuarios', data);
-    showToast('Usuario creado','success');
-  }
-  cerrarModal('modal-usuario');
-  cargarUsuarios();
 }
 
 async function toggleUsuario(id, nuevoEstado) {

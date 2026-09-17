@@ -372,8 +372,8 @@ async function enviarCotizacionWhatsApp(ordenId) {
 
   try {
     const token     = generarTokenCotizacion();
-    const terminos  = await getConfig('terminos_garantia') || '';
     const tallerNom = await getConfig('negocio_nombre') || 'nuestro taller';
+    const terminos  = (await getConfig('terminos_garantia') || '').split('{{TALLER}}').join(tallerNom);
 
     await dbUpdate('ordenes', {
       ...orden,
