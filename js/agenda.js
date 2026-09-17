@@ -83,7 +83,8 @@ async function renderParqueo(turnos, capacidadMax) {
             padding:2px 8px;
             font-size:0.58rem;
             font-weight:700;
-          ">${t.estado === 'en_taller' ? '🔧 En Taller' : t.estado === 'completado' ? '✅ Listo' : '⏳ Pendiente'}</span>
+          ">🔧 Trabajando</span>
+          ${t.en_taller_desde ? `<span style="font-size:0.58rem;color:var(--text3)">⏱ ${tiempoTranscurrido(t.en_taller_desde)}</span>` : ''}
         ` : `
           <!-- Espacio vacío -->
           ${iconoVehiculoBadge(null, '#8a97a8')}
@@ -95,6 +96,25 @@ async function renderParqueo(turnos, capacidadMax) {
 
   if (window.lucide) lucide.createIcons();
 }
+
+// Tiempo transcurrido desde que un vehículo entró a "en_taller",
+// en formato corto (ej. "45min", "2h 10min").
+function tiempoTranscurrido(desdeIso) {
+  const mins = Math.max(0, Math.floor((Date.now() - new Date(desdeIso).getTime()) / 60000));
+  if (mins < 60) return `${mins}min`;
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return m ? `${h}h ${m}min` : `${h}h`;
+}
+
+// Refrescar el parqueo cada minuto mientras la página de Agenda esté
+// activa, para que el tiempo "trabajando" se mantenga al día sin recargar.
+setInterval(() => {
+  const pagina = document.getElementById('page-agenda');
+  if (pagina?.classList.contains('active') && agendaViewActual === 'parqueo') {
+    cargarAgenda(document.getElementById('agenda-fecha')?.value);
+  }
+}, 60000);
 
 // ---- ÍCONO DE VEHÍCULO (badge redondeado, por tipo) ----
 // Usa los íconos Lucide que ya carga el resto de la app (misma familia
@@ -346,7 +366,9 @@ async function cambiarEstadoTurno(id, estadoActual) {
   const idx = estados.indexOf(estadoActual);
   const siguiente = estados[(idx + 1) % estados.length];
   const turno = await dbGet('agenda', id);
-  await dbUpdate('agenda', { ...turno, estado: siguiente });
+  const cambios = { ...turno, estado: siguiente };
+  if (siguiente === 'en_taller') cambios.en_taller_desde = new Date().toISOString();
+  await dbUpdate('agenda', cambios);
 
   if (siguiente === 'confirmado') {
     await crearOrdenAutomaticaDesdeTurno({ ...turno, estado: siguiente });
@@ -513,6 +535,9 @@ async function guardarTurno() {
   let turno;
   if (turnoEditId) {
     const ex = await dbGet('agenda', turnoEditId);
+    if (data.estado === 'en_taller' && ex.estado !== 'en_taller') {
+      data.en_taller_desde = new Date().toISOString();
+    }
     turno = { ...ex, ...data, id: turnoEditId };
     await dbUpdate('agenda', turno);
     showToast('Turno actualizado', 'success');
