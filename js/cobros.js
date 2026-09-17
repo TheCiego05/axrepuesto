@@ -3,6 +3,8 @@
 // ============================================================
 
 async function cargarCobros(busqueda = '') {
+  const container0 = document.getElementById('cobros-lista');
+  if (container0 && !container0.children.length) container0.innerHTML = skeletonCards(3);
   const todas = await dbGetAll('cuentas_cobrar');
   let filtradas = todas.filter(c => c.estado !== 'pagado');
   if (busqueda) {

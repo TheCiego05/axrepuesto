@@ -4,6 +4,8 @@
 let repuestoEditId = null;
 
 async function cargarInventario(busqueda = '') {
+  const tbody0 = document.getElementById('inventario-tbody');
+  if (tbody0 && !tbody0.children.length) tbody0.innerHTML = skeletonRows(8, 4);
   const todos = await dbGetAll('repuestos');
   const filtrados = todos.filter(r =>
     !busqueda ||
@@ -101,13 +103,32 @@ async function eliminarRepuesto(id) {
   cargarInventario();
 }
 
+let ajusteStockId = null;
+
 async function ajustarStock(id) {
+  ajusteStockId = id;
   const r = await dbGet('repuestos', id);
-  const nuevo = prompt(`Stock actual de "${r.nombre}": ${r.stock}\nNuevo stock:`, r.stock);
-  if (nuevo === null) return;
+  document.getElementById('ajs-nombre').textContent = r.nombre;
+  document.getElementById('ajs-actual').textContent = r.stock || 0;
+  document.getElementById('ajs-nuevo').value = r.stock || 0;
+  abrirModal('modal-ajustar-stock');
+}
+
+async function confirmarAjusteStock() {
+  const btn = document.querySelector('#modal-ajustar-stock .btn-primary');
+  const nuevo = document.getElementById('ajs-nuevo').value;
   const n = parseFloat(nuevo);
-  if (isNaN(n)) { showToast('Cantidad inválida', 'error'); return; }
-  await dbUpdate('repuestos', { ...r, stock: n });
-  showToast('Stock actualizado', 'success');
-  cargarInventario();
+  if (isNaN(n) || n < 0) { showToast('Cantidad inválida', 'error'); return; }
+  btnLoading(btn, 'Guardando...');
+  try {
+    const r = await dbGet('repuestos', ajusteStockId);
+    await dbUpdate('repuestos', { ...r, stock: n });
+    showToast('Stock actualizado', 'success');
+    cerrarModal('modal-ajustar-stock');
+    cargarInventario();
+  } catch(err) {
+    showToast('Error: ' + err.message, 'error');
+  } finally {
+    btnReset(btn);
+  }
 }
