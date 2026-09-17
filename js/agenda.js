@@ -188,33 +188,78 @@ function onClienteTurnoChange(sel) {
 // ---- FOTOS DEL VEHÍCULO ----
 let fotosBase64 = [];
 
-function previewFotos(input) {
-  fotosBase64 = [];
-  const preview = document.getElementById('turno-fotos-preview');
-  preview.innerHTML = '';
+// Fotos de fotos de celular pueden pesar varios MB sin comprimir; las
+// reducimos a un JPEG liviano antes de guardarlas en base64, si no la
+// petición a Supabase puede fallar o el registro queda enorme.
+const FOTO_MAX_DIM   = 1280;
+const FOTO_CALIDAD   = 0.72;
+const FOTO_MAX_COUNT = 6;
 
+function comprimirImagen(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > FOTO_MAX_DIM || height > FOTO_MAX_DIM) {
+          const ratio = Math.min(FOTO_MAX_DIM / width, FOTO_MAX_DIM / height);
+          width  = Math.round(width * ratio);
+          height = Math.round(height * ratio);
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width; canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', FOTO_CALIDAD));
+      };
+      img.onerror = () => reject(new Error('No se pudo leer la imagen'));
+      img.src = e.target.result;
+    };
+    reader.onerror = () => reject(new Error('No se pudo leer el archivo'));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function previewFotos(input) {
   const files = Array.from(input.files);
-  if (!files.length) {
-    preview.innerHTML = '<p class="text-muted text-sm">📷 Toca para agregar fotos</p>';
+  if (!files.length) return;
+
+  if (fotosBase64.length + files.length > FOTO_MAX_COUNT) {
+    showToast(`Máximo ${FOTO_MAX_COUNT} fotos por turno`, 'error');
+    input.value = '';
     return;
   }
 
-  files.forEach((file, idx) => {
-    const reader = new FileReader();
-    reader.onload = e => {
-      fotosBase64.push(e.target.result);
-      const img = document.createElement('img');
-      img.src = e.target.result;
-      img.style.cssText = 'width:80px;height:80px;object-fit:cover;border-radius:6px;border:2px solid var(--border);cursor:pointer';
-      img.title = 'Click para eliminar';
-      img.onclick = () => {
-        fotosBase64.splice(idx, 1);
-        img.remove();
-      };
-      preview.appendChild(img);
-    };
-    reader.readAsDataURL(file);
-  });
+  // Se procesan en orden (no en paralelo) para que el índice de cada foto
+  // en fotosBase64 sea predecible y "eliminar" borre la correcta.
+  for (const file of files) {
+    try {
+      fotosBase64.push(await comprimirImagen(file));
+    } catch(e) {
+      console.error('Error procesando foto:', e);
+      showToast('No se pudo procesar una de las fotos', 'error');
+    }
+  }
+  input.value = ''; // permite volver a seleccionar el mismo archivo después
+  renderFotosPreview();
+}
+
+function renderFotosPreview() {
+  const preview = document.getElementById('turno-fotos-preview');
+  if (!preview) return;
+  if (!fotosBase64.length) {
+    preview.innerHTML = '<p class="text-muted text-sm">📷 Toca para agregar fotos</p>';
+    return;
+  }
+  preview.innerHTML = fotosBase64.map((src, i) => `
+    <img src="${src}" title="Click para eliminar" onclick="eliminarFotoTurno(${i})"
+      style="width:80px;height:80px;object-fit:cover;border-radius:6px;border:2px solid var(--border);cursor:pointer">
+  `).join('');
+}
+
+function eliminarFotoTurno(i) {
+  fotosBase64.splice(i, 1);
+  renderFotosPreview();
 }
 // ============================================================
 // AGENDA.JS — Turnos y gestión de capacidad diaria
@@ -351,22 +396,12 @@ async function abrirModalTurno(id = null) {
         if (mecIdEl) mecIdEl.value = t.mecanico_id;
       }, 300);
     }
-    // Mostrar fotos guardadas
-    if (t.fotos) {
-      try {
-        fotosBase64 = JSON.parse(t.fotos);
-        const prev = document.getElementById('turno-fotos-preview');
-        if (prev) {
-          prev.innerHTML = '';
-          fotosBase64.forEach((src, idx) => {
-            const img = document.createElement('img');
-            img.src = src;
-            img.style.cssText = 'width:80px;height:80px;object-fit:cover;border-radius:6px;border:2px solid var(--border)';
-            prev.appendChild(img);
-          });
-        }
-      } catch(e) {}
-    }
+    // Mostrar fotos guardadas (con opción de eliminarlas)
+    try { fotosBase64 = t.fotos ? JSON.parse(t.fotos) : []; } catch(e) { fotosBase64 = []; }
+    renderFotosPreview();
+  } else {
+    fotosBase64 = [];
+    renderFotosPreview();
   }
 
   abrirModal('modal-turno');
