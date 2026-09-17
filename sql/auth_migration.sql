@@ -82,13 +82,44 @@ grant execute on function crear_usuario_con_auth(text,text,bigint) to authentica
 --    la tabla usuarios de este proyecto.
 
 -- ============================================================
--- PENDIENTE (a propósito, no incluido en esta migración):
--- Las políticas RLS de todas las tablas siguen abiertas a `anon`
--- (acceso total sin sesión). Ahora que hay Auth real, el siguiente
--- paso de seguridad es restringir esas políticas a `authenticated`,
--- excepto en `ordenes` donde debe seguir permitiendo lectura/escritura
--- anónima LIMITADA para la página pública de cotización
--- (cotizacion.html). Ese cambio se hace aparte porque tiene riesgo
--- real de romper el acceso público a cotizaciones si no se ajusta
--- cotizacion.html en el mismo paso.
+-- 4. RLS endurecido (ya aplicado, probado en vivo: login sigue
+--    funcionando y cotizacion.html también). Resumen:
+--
+--    - esta_bloqueado / registrar_intento_login pasan a SECURITY
+--      DEFINER (deben poder correr como anon, antes de iniciar sesión).
+--    - search_path fijado en las 5 funciones que lo tenían mutable
+--      (esta_bloqueado, registrar_intento_login, validar_sesion,
+--      update_timestamp, limpiar_sesiones_expiradas).
+--    - Todas las políticas "acceso_*" pasan de {anon} o {public} a
+--      solo {authenticated} — ya no hay acceso sin sesión a ninguna
+--      tabla, EXCEPTO:
+--        · config: anon puede SELECT (cotizacion.html necesita leer
+--          nombre/teléfono/dirección del negocio sin sesión).
+--        · ordenes: anon puede SELECT solo filas con
+--          cotizacion_token is not null, y UPDATE solo si
+--          cotizacion_estado='pendiente', pasando a 'aceptada' o
+--          'rechazada'. Además, GRANT a nivel de columna: anon solo
+--          puede escribir cotizacion_estado, cotizacion_respondida_en,
+--          cotizacion_firma_nombre, cotizacion_comentario — ni con un
+--          token válido puede tocar precios, arreglos o datos del
+--          cliente.
+--
+--    alter policy acceso_config on config to authenticated;
+--    create policy config_lectura_publica on config
+--      for select to anon using (true);
+--
+--    alter policy acceso_ordenes on ordenes to authenticated;
+--    create policy cotizacion_lectura_publica on ordenes
+--      for select to anon using (cotizacion_token is not null);
+--    create policy cotizacion_respuesta_publica on ordenes
+--      for update to anon
+--      using (cotizacion_estado = 'pendiente' and cotizacion_token is not null)
+--      with check (cotizacion_estado in ('aceptada','rechazada') and cotizacion_token is not null);
+--    revoke update on ordenes from anon;
+--    grant update (cotizacion_estado, cotizacion_respondida_en,
+--      cotizacion_firma_nombre, cotizacion_comentario) on ordenes to anon;
+--
+--    Pendiente aparte (no relacionado con Auth): "Leaked Password
+--    Protection" está apagado en Authentication → Policies del panel
+--    de Supabase — es un toggle, no se puede activar por SQL.
 -- ============================================================
