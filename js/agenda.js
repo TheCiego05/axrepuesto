@@ -38,8 +38,8 @@ async function renderParqueo(turnos, capacidadMax) {
     return `
       <div onclick="${ocupado ? `verTurnoParqueo(${t?.id})` : `abrirModalTurno()`}"
         style="
-          background:${ocupado ? 'var(--bg2)' : '#f0f8f0'};
-          border:2px ${ocupado ? 'solid' : 'dashed'} ${ocupado ? color : '#c8daea'};
+          background:${ocupado ? 'var(--bg2)' : 'var(--bg3)'};
+          border:2px ${ocupado ? 'solid' : 'dashed'} ${ocupado ? color : 'var(--border2)'};
           border-radius:12px;
           padding:14px 10px;
           text-align:center;
@@ -83,9 +83,9 @@ async function renderParqueo(turnos, capacidadMax) {
           ">${t.estado === 'en_taller' ? '🔧 En Taller' : t.estado === 'completado' ? '✅ Listo' : '⏳ Pendiente'}</span>
         ` : `
           <!-- Espacio vacío -->
-          ${iconoVehiculoBadge(null, '#c8daea')}
-          <div style="font-size:0.72rem;color:#aaa;margin-top:4px">Disponible</div>
-          <div style="font-size:0.65rem;color:#ccc">Toca para agendar</div>
+          ${iconoVehiculoBadge(null, '#8a97a8')}
+          <div style="font-size:0.72rem;color:var(--text2);margin-top:4px">Disponible</div>
+          <div style="font-size:0.65rem;color:var(--text3)">Toca para agendar</div>
         `}
       </div>`;
   }).join('');

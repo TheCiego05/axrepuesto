@@ -36,6 +36,14 @@
   .cot-status p { font-size:0.8rem; color:var(--text2); }
   .cot-footer { text-align:center; padding:18px; font-size:0.68rem; color:var(--text3); }
   #cot-loading { text-align:center; padding:60px 20px; color:var(--text2); font-size:0.85rem; }
+  .cot-seg { text-align:left; padding:18px 24px 22px; border-top:1px solid var(--border); }
+  .cot-seg h3 { font-size:0.65rem; font-weight:700; text-transform:uppercase; letter-spacing:0.8px; color:var(--text2); margin-bottom:10px; }
+  .cot-seg-item { display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--border); }
+  .cot-seg-item:last-child { border-bottom:none; }
+  .cot-seg-item .desc { flex:1; }
+  .cot-seg-item .desc strong { display:block; font-size:0.82rem; color:var(--text); }
+  .cot-seg-item .desc span { font-size:0.7rem; color:var(--text2); }
+  .cot-seg-refresh { text-align:center; margin-top:10px; font-size:0.68rem; color:var(--text3); }
 </style>
 </head>
 <body>
@@ -98,6 +106,11 @@
       <div class="ico" id="cot-resultado-ico">✅</div>
       <h2 id="cot-resultado-titulo"></h2>
       <p id="cot-resultado-desc"></p>
+    </div>
+    <div id="cot-seguimiento" class="cot-seg" style="display:none">
+      <h3>Progreso de tu vehículo</h3>
+      <div id="cot-seg-lista"></div>
+      <p class="cot-seg-refresh" id="cot-seg-refresh">Se actualiza automáticamente</p>
     </div>
   </div>
 
@@ -195,12 +208,50 @@ function mostrarResultado(estado, orden) {
     ico.textContent = '✅';
     titulo.textContent = '¡Cotización aprobada!';
     desc.textContent = `Gracias ${orden.cotizacion_firma_nombre||''}. El taller ya fue notificado y continuará con el servicio. Respondido el ${formatDate(orden.cotizacion_respondida_en)}.`;
+    document.getElementById('cot-seguimiento').style.display = 'block';
+    renderSeguimiento(orden);
+    iniciarPolling();
   } else {
     ico.textContent = '❌';
     titulo.textContent = 'Cotización rechazada';
     desc.textContent = `Registramos tu respuesta, ${orden.cotizacion_firma_nombre||''}. Si deseas conversar sobre otras opciones, contáctanos directamente.`;
   }
   document.getElementById('cot-resultado').style.display = 'block';
+}
+
+const ESTADO_ARREGLO = {
+  en_proceso: { icon:'🔧', label:'En proceso', color:'#d97706' },
+  prueba:     { icon:'🔵', label:'En prueba',  color:'#2563eb' },
+  listo:      { icon:'✅', label:'Listo',       color:'#16a34a' },
+};
+
+function renderSeguimiento(orden) {
+  const arreglos = Array.isArray(orden.arreglos) ? orden.arreglos : [];
+  const lista = document.getElementById('cot-seg-lista');
+  if (!arreglos.length) {
+    lista.innerHTML = '<p class="text-sm text-muted">Sin reparaciones registradas todavía.</p>';
+    return;
+  }
+  lista.innerHTML = arreglos.map(a => {
+    const info = ESTADO_ARREGLO[a.estado] || ESTADO_ARREGLO.en_proceso;
+    return `<div class="cot-seg-item">
+      <div class="desc">
+        <strong>${esc(a.descripcion)}</strong>
+        <span>${a.mecanico_nombre ? '🔧 ' + esc(a.mecanico_nombre) : 'Mecánico por asignar'}</span>
+      </div>
+      <span class="badge" style="background:${info.color}18;color:${info.color};border:1px solid ${info.color}44">${info.icon} ${info.label}</span>
+    </div>`;
+  }).join('');
+}
+
+let pollingIniciado = false;
+function iniciarPolling() {
+  if (pollingIniciado) return;
+  pollingIniciado = true;
+  setInterval(async () => {
+    const { data: orden } = await client.from('ordenes').select('*').eq('id', ordenId).single();
+    if (orden) { ordenActual = orden; renderSeguimiento(orden); }
+  }, 30000);
 }
 
 async function responderCotizacion(decision) {

@@ -745,6 +745,7 @@
   <div class="modal-body"><div id="form-arreglo-temp" class="form-grid">
     <div class="form-group"><label>Descripción *</label><input id="at-descripcion" class="form-control" placeholder="Ej: Cambio de aceite y filtro"></div>
     <div class="form-group"><label>Mano de Obra (RD$)</label><input id="at-mano-obra" class="form-control" type="number" value="0" step="0.01"></div>
+    <div class="form-group"><label>Mecánico asignado</label><select id="at-mecanico" class="form-control"><option value="">— Sin asignar —</option></select></div>
     <div class="form-group"><label>Notas</label><textarea id="at-notas" class="form-control" placeholder="Detalles adicionales..."></textarea></div>
   </div></div>
   <div class="modal-footer"><button class="btn btn-ghost" onclick="cerrarModal('modal-arreglo-temp')">Cancelar</button><button class="btn btn-primary" onclick="guardarArregloTemp()">✅ Agregar</button></div></div>
@@ -756,6 +757,7 @@
   <div class="modal-body"><div id="form-arreglo-existente" class="form-grid">
     <div class="form-group"><label>Descripción *</label><input id="are-descripcion" class="form-control" placeholder="Ej: Cambio de frenos"></div>
     <div class="form-group"><label>Mano de Obra (RD$)</label><input id="are-mano-obra" class="form-control" type="number" value="0" step="0.01"></div>
+    <div class="form-group"><label>Mecánico asignado</label><select id="are-mecanico" class="form-control"><option value="">— Sin asignar —</option></select></div>
     <div class="form-group"><label>Repuesto del Inventario</label><select id="are-repuesto" class="form-control"><option value="">— Sin repuesto —</option></select></div>
     <div class="form-group"><label>Cantidad</label><input id="are-cantidad" class="form-control" type="number" value="1" min="1"></div>
     <div class="form-group"><label>Notas</label><textarea id="are-notas" class="form-control"></textarea></div>
