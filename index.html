@@ -533,12 +533,12 @@
         <div class="form-group">
           <label>Siguiente número e-CF (E32...)</label>
           <input id="ecf-siguiente" class="form-control" type="number" value="1" min="1">
-          <span style="font-size:0.68rem;color:var(--text2);margin-top:3px;display:block">El primer número de tu rango autorizado por la DGII para Factura de Consumidor Final (E32). Se incrementa con cada e-CF emitido.</span>
+          <span style="font-size:0.68rem;color:var(--text2);margin-top:3px;display:block">El primer número de tu rango autorizado por la DGII para Factura de Consumidor Final (E32). Solo se usa para crear la secuencia la primera vez; una vez activa, se bloquea aquí y el contador real se administra en Secuencias de Comprobantes.</span>
         </div>
         <div class="form-group">
           <label>Siguiente NCF Crédito Fiscal (B01...)</label>
           <input id="ecf-siguiente-b01" class="form-control" type="number" value="1" min="1">
-          <span style="font-size:0.68rem;color:var(--text2);margin-top:3px;display:block">Número inicial de tu secuencia B01 autorizada para crédito fiscal.</span>
+          <span style="font-size:0.68rem;color:var(--text2);margin-top:3px;display:block">Número inicial de tu secuencia B01. Solo se usa para crearla la primera vez; los cambios posteriores se hacen en Secuencias de Comprobantes.</span>
         </div>
       </div>
 
