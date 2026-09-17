@@ -278,6 +278,13 @@ async function confirmarFactura() {
       .update({ estado_orden: 'entregado', factura_id: facturaId })
       .eq('id', facturaActual.orden.id);
 
+    // Si esta orden vino de una cita de Agenda, liberar su espacio de
+    // parqueo: el vehículo ya se entregó, deja de ocupar capacidad.
+    await getClient().from('agenda')
+      .update({ estado: 'completado' })
+      .eq('orden_id', facturaActual.orden.id)
+      .eq('estado', 'en_taller');
+
     // Si no se pagó el total, dejar el saldo en Cuentas por Cobrar
     const saldoPendiente = facturaActual.total - montoPagado;
     if (saldoPendiente > 0.009) {
