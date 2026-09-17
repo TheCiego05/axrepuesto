@@ -138,60 +138,38 @@ async function generarNumeroFactura() {
   return 'FAC-' + String((count || 0) + 1).padStart(6, '0');
 }
 
-// ---- AUTENTICACIÓN SIMPLE ----
+// ---- AUTENTICACIÓN (Supabase Auth) ----
 let usuarioActual = null;
 
-// ---- SESIÓN TOKEN ----
-function generarToken() {
-  return Array.from(crypto.getRandomValues(new Uint8Array(32)))
-    .map(b => b.toString(16).padStart(2,'0')).join('');
+// Trae el perfil de la app (roles, permisos, nombre) para un usuario ya
+// autenticado en Supabase Auth, enlazado por usuarios.auth_user_id.
+async function cargarPerfilUsuario(authUser) {
+  const { data: perfil, error } = await getClient()
+    .from('usuarios')
+    .select('*, roles(nombre, permisos)')
+    .eq('auth_user_id', authUser.id)
+    .single();
+  if (error || !perfil) return null;
+  return perfil;
 }
 
-async function crearSesion(usuarioId) {
-  const token = generarToken();
-  const expira = new Date(Date.now() + 8 * 60 * 60 * 1000); // 8 horas
-  await getClient().from('sesiones').insert({
-    usuario_id: usuarioId,
-    token,
-    expira_en: expira.toISOString(),
-    user_agent: navigator.userAgent.substring(0, 200),
-  });
-  sessionStorage.setItem('llave10_token', token);
-  sessionStorage.setItem('llave10_token_expira', expira.toISOString());
-  return token;
-}
+// Se llama una vez al cargar la app para restaurar la sesión de Supabase
+// Auth (si existe) antes de decidir si se muestra el login o la app.
+async function initAuth() {
+  const { data: { session } } = await getClient().auth.getSession();
+  if (!session) return null;
 
-async function verificarSesionActiva() {
-  const token   = sessionStorage.getItem('llave10_token');
-  const expira  = sessionStorage.getItem('llave10_token_expira');
-  if (!token || !expira) return false;
-  if (new Date(expira) < new Date()) {
-    await cerrarSesionToken(token);
-    return false;
+  const perfil = await cargarPerfilUsuario(session.user);
+  if (!perfil || perfil.activo === false) {
+    await getClient().auth.signOut();
+    return null;
   }
-  return true;
+  usuarioActual = perfil;
+  return perfil;
 }
-
-async function cerrarSesionToken(token) {
-  const t = token || sessionStorage.getItem('llave10_token');
-  if (t) {
-    await getClient().from('sesiones').delete().eq('token', t);
-  }
-  sessionStorage.removeItem('llave10_token');
-  sessionStorage.removeItem('llave10_token_expira');
-}
-
-// E2: Auto-expire session check
-setInterval(async () => {
-  const expira = sessionStorage.getItem('llave10_token_expira');
-  if (expira && new Date(expira) < new Date()) {
-    showToast('Sesión expirada. Vuelve a iniciar sesión.', 'error');
-    setTimeout(() => logout(), 2000);
-  }
-}, 60000); // Check every minute
 
 async function loginUsuario(email, password) {
-  // E1: Verificar bloqueo con función mejorada
+  // Verificar bloqueo por intentos fallidos
   try {
     const { data: bloqueado } = await getClient().rpc('esta_bloqueado', { p_email: email });
     if (bloqueado) {
@@ -199,20 +177,9 @@ async function loginUsuario(email, password) {
     }
   } catch(e) { /* continuar si falla la verificación */ }
 
-  // Auth simple con hash SHA-256
-  const encoder = new TextEncoder();
-  const hashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(password));
-  const hash = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2,'0')).join('');
+  const { data, error } = await getClient().auth.signInWithPassword({ email, password });
 
-  const { data: user, error } = await getClient()
-    .from('usuarios')
-    .select('*, roles(nombre, permisos)')
-    .eq('email', email)
-    .eq('activo', true)
-    .single();
-
-  if (error || !user) {
-    // Registrar intento fallido con función mejorada
+  if (error) {
     try {
       const { data: resultado } = await getClient().rpc('registrar_intento_login', {
         p_email: email, p_exitoso: false
@@ -221,57 +188,46 @@ async function loginUsuario(email, password) {
         return { error: `🔒 Cuenta bloqueada por 15 minutos tras ${resultado.intentos} intentos fallidos.` };
       }
       const restantes = resultado?.restantes || 0;
-      return { error: `Usuario no encontrado. ${restantes > 0 ? restantes + ' intento(s) restante(s).' : ''}` };
+      return { error: `Correo o contraseña incorrectos. ${restantes > 0 ? restantes + ' intento(s) restante(s).' : ''}` };
     } catch(e) {
-      return { error: 'Usuario no encontrado.' };
+      return { error: 'Correo o contraseña incorrectos.' };
     }
   }
 
-  // Primera vez (sin password_hash) o verificar hash
-  if (user.password_hash && user.password_hash !== hash) {
-    try {
-      const { data: resultado } = await getClient().rpc('registrar_intento_login', {
-        p_email: email, p_exitoso: false
-      });
-      if (resultado?.bloqueado) {
-        return { error: `🔒 Cuenta bloqueada por 15 minutos.` };
-      }
-      const restantes = resultado?.restantes || 0;
-      return { error: `Contraseña incorrecta. ${restantes > 0 ? restantes + ' intento(s) restante(s).' : 'Cuenta será bloqueada.'}` };
-    } catch(e) {
-      return { error: 'Contraseña incorrecta.' };
-    }
+  const perfil = await cargarPerfilUsuario(data.user);
+  if (!perfil) {
+    await getClient().auth.signOut();
+    return { error: 'Tu cuenta no tiene un perfil asociado en el sistema. Contacta al administrador.' };
+  }
+  if (perfil.activo === false) {
+    await getClient().auth.signOut();
+    return { error: 'Tu cuenta está desactivada. Contacta al administrador.' };
   }
 
-  // Login exitoso - registrar y crear sesión
-  try {
-    await getClient().rpc('registrar_intento_login', { p_email: email, p_exitoso: true });
-  } catch(e) {}
+  try { await getClient().rpc('registrar_intento_login', { p_email: email, p_exitoso: true }); } catch(e) {}
+  await getClient().from('usuarios').update({ ultimo_acceso: new Date().toISOString() }).eq('id', perfil.id);
 
-  if (!user.password_hash) {
-    await getClient().from('usuarios')
-      .update({ password_hash: hash, ultimo_acceso: new Date().toISOString() })
-      .eq('id', user.id);
-  } else {
-    await getClient().from('usuarios')
-      .update({ ultimo_acceso: new Date().toISOString() }).eq('id', user.id);
-  }
+  usuarioActual = perfil;
+  return { user: perfil };
+}
 
-  // E2: Crear token de sesión con expiración 8 horas
-  await crearSesion(user.id);
+async function enviarRecuperacionPassword(email) {
+  const { error } = await getClient().auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin + window.location.pathname,
+  });
+  if (error) return { error: 'No se pudo enviar el correo. Verifica el email e intenta de nuevo.' };
+  return { ok: true };
+}
 
-  usuarioActual = user;
-  sessionStorage.setItem('llave10_user', JSON.stringify(user));
-  return { user };
+async function actualizarPasswordPropia(nuevaPassword) {
+  const { error } = await getClient().auth.updateUser({ password: nuevaPassword });
+  if (error) return { error: error.message.includes('6 characters') ? 'La contraseña debe tener al menos 6 caracteres.' : 'No se pudo actualizar la contraseña.' };
+  return { ok: true };
 }
 
 function getUsuarioActual() {
-  if (usuarioActual) return usuarioActual;
-  const saved = sessionStorage.getItem('llave10_user');
-  if (saved) { usuarioActual = JSON.parse(saved); return usuarioActual; }
-  return null;
+  return usuarioActual;
 }
-
 
 // ---- AUDITORÍA ----
 async function registrarAuditoria(accion, tabla = null, registroId = null, detalle = {}) {
@@ -290,9 +246,8 @@ async function registrarAuditoria(accion, tabla = null, registroId = null, detal
 
 async function logout() {
   registrarAuditoria('LOGOUT');
-  await cerrarSesionToken();
+  await getClient().auth.signOut();
   usuarioActual = null;
-  sessionStorage.removeItem('llave10_user');
   mostrarLogin();
 }
 

@@ -33,7 +33,54 @@
       <p id="login-error" style="color:var(--red);font-size:0.78rem;min-height:18px"></p>
       <button id="btn-login" class="btn btn-primary w-full" onclick="handleLogin()" style="padding:11px">Entrar</button>
     </div>
-    <p style="text-align:center;margin-top:16px;font-size:0.7rem;color:var(--text2)">Primera vez: usa cualquier contraseña para configurarla</p>
+    <p style="text-align:center;margin-top:16px;font-size:0.72rem">
+      <a href="#" onclick="event.preventDefault();abrirRecuperarPassword()" style="color:var(--text2)">¿Olvidaste tu contraseña?</a>
+    </p>
+  </div>
+</div>
+
+<!-- ═══════════════════════ RECUPERAR CONTRASEÑA (paso 1: pedir email) -->
+<div id="recuperar-screen" class="login-screen" style="display:none">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="login-logo-icon"><i data-lucide="mail" style="width:28px;height:28px;stroke:#fff;stroke-width:2.5"></i></div>
+      <h1>Recuperar acceso</h1>
+      <p>Te enviaremos un enlace a tu correo</p>
+    </div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Correo electrónico</label>
+        <input id="recuperar-email" class="form-control" type="email" placeholder="usuario@taller.com" autocomplete="username">
+      </div>
+      <p id="recuperar-msg" style="font-size:0.78rem;min-height:18px"></p>
+      <button id="btn-recuperar" class="btn btn-primary w-full" onclick="enviarRecuperarPassword()" style="padding:11px">Enviar enlace</button>
+    </div>
+    <p style="text-align:center;margin-top:16px;font-size:0.72rem">
+      <a href="#" onclick="event.preventDefault();cerrarRecuperarPassword()" style="color:var(--text2)">← Volver al inicio de sesión</a>
+    </p>
+  </div>
+</div>
+
+<!-- ═══════════════════════ ESTABLECER NUEVA CONTRASEÑA (paso 2: desde el enlace del correo) -->
+<div id="nueva-password-screen" class="login-screen" style="display:none">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="login-logo-icon"><i data-lucide="key-round" style="width:28px;height:28px;stroke:#fff;stroke-width:2.5"></i></div>
+      <h1>Nueva contraseña</h1>
+      <p>Elige tu nueva contraseña de acceso</p>
+    </div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Nueva contraseña</label>
+        <input id="nueva-password-1" class="form-control" type="password" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
+      </div>
+      <div class="form-group">
+        <label>Confirmar contraseña</label>
+        <input id="nueva-password-2" class="form-control" type="password" placeholder="Repite la contraseña" autocomplete="new-password">
+      </div>
+      <p id="nueva-password-msg" style="color:var(--red);font-size:0.78rem;min-height:18px"></p>
+      <button id="btn-nueva-password" class="btn btn-primary w-full" onclick="guardarNuevaPassword()" style="padding:11px">Guardar y entrar</button>
+    </div>
   </div>
 </div>
 
@@ -431,9 +478,9 @@
       </div>
       <div class="table-wrap" style="padding:20px">
         <h3 style="margin-bottom:6px;font-size:1rem">📋 Términos y Garantía</h3>
-        <p class="text-xs text-muted mt-2" style="margin-bottom:10px">Este texto se adjunta a cada cotización que envíes por WhatsApp. Al cambiarlo, solo afecta las cotizaciones nuevas que envíes de aquí en adelante.</p>
+        <p class="text-xs text-muted mt-2" style="margin-bottom:10px">Este texto se adjunta a cada cotización que envíes por WhatsApp. Escribe <code>{{TALLER}}</code> donde quieras que aparezca el nombre del taller (se reemplaza automáticamente). Al cambiarlo, solo afecta las cotizaciones nuevas que envíes de aquí en adelante.</p>
         <div class="form-group">
-          <textarea id="cfg-terminos" class="form-control" rows="7" placeholder="Ej: Esta cotización es válida por 15 días. La mano de obra tiene garantía de 30 días..."></textarea>
+          <textarea id="cfg-terminos" class="form-control" rows="7" placeholder="Ej: Las reparaciones realizadas por {{TALLER}} cuentan con garantía de 30 días..."></textarea>
         </div>
         <button class="btn btn-primary mt-3 w-full" onclick="guardarConfigNegocio()">💾 Guardar</button>
       </div>
@@ -1117,7 +1164,7 @@
         <option value="1">Super Admin</option>
       </select>
     </div>
-    <div class="form-group"><label>Contraseña inicial</label><input id="usr-password" class="form-control" type="password" placeholder="El usuario la cambia en su primer acceso"></div>
+    <p id="usr-password-nota" class="text-xs text-muted">Al crear el usuario le enviaremos un correo para que configure su propia contraseña.</p>
   </div></div>
   <div class="modal-footer"><button class="btn btn-ghost" onclick="cerrarModal('modal-usuario')">Cancelar</button><button class="btn btn-primary" onclick="guardarUsuario()">💾 Guardar</button></div></div>
 </div>

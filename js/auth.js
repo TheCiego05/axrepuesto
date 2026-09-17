@@ -4,10 +4,77 @@
 
 function mostrarLogin() {
   document.getElementById('app-shell').style.display = 'none';
+  document.getElementById('recuperar-screen').style.display = 'none';
+  document.getElementById('nueva-password-screen').style.display = 'none';
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('login-email').value = '';
   document.getElementById('login-password').value = '';
   document.getElementById('login-error').textContent = '';
+}
+
+function abrirRecuperarPassword() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('recuperar-screen').style.display = 'flex';
+  document.getElementById('recuperar-email').value = document.getElementById('login-email').value || '';
+  document.getElementById('recuperar-msg').textContent = '';
+  document.getElementById('recuperar-msg').style.color = '';
+}
+
+function cerrarRecuperarPassword() {
+  document.getElementById('recuperar-screen').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+}
+
+async function enviarRecuperarPassword() {
+  const email = document.getElementById('recuperar-email').value.trim();
+  const msgEl = document.getElementById('recuperar-msg');
+  const btn   = document.getElementById('btn-recuperar');
+  if (!email) { msgEl.style.color = 'var(--red)'; msgEl.textContent = 'Escribe tu correo'; return; }
+
+  btnLoading(btn, 'Enviando...');
+  const { error } = await enviarRecuperacionPassword(email);
+  btnReset(btn);
+
+  if (error) { msgEl.style.color = 'var(--red)'; msgEl.textContent = error; return; }
+  msgEl.style.color = 'var(--green)';
+  msgEl.textContent = '✅ Revisa tu correo y sigue el enlace para continuar.';
+}
+
+function mostrarNuevaPassword() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('recuperar-screen').style.display = 'none';
+  document.getElementById('app-shell').style.display = 'none';
+  document.getElementById('nueva-password-screen').style.display = 'flex';
+  document.getElementById('nueva-password-1').value = '';
+  document.getElementById('nueva-password-2').value = '';
+  document.getElementById('nueva-password-msg').textContent = '';
+}
+
+async function guardarNuevaPassword() {
+  const p1 = document.getElementById('nueva-password-1').value;
+  const p2 = document.getElementById('nueva-password-2').value;
+  const msgEl = document.getElementById('nueva-password-msg');
+  const btn   = document.getElementById('btn-nueva-password');
+
+  if (p1.length < 6) { msgEl.textContent = 'La contraseña debe tener al menos 6 caracteres'; return; }
+  if (p1 !== p2) { msgEl.textContent = 'Las contraseñas no coinciden'; return; }
+
+  btnLoading(btn, 'Guardando...');
+  const { error } = await actualizarPasswordPropia(p1);
+  btnReset(btn);
+
+  if (error) { msgEl.textContent = error; return; }
+
+  const user = await initAuth();
+  if (user) {
+    document.getElementById('nueva-password-screen').style.display = 'none';
+    mostrarApp();
+    await actualizarDashboard();
+    showToast('Contraseña actualizada. ¡Bienvenido!', 'success');
+  } else {
+    showToast('Contraseña actualizada. Inicia sesión de nuevo.', 'success');
+    mostrarLogin();
+  }
 }
 
 function mostrarApp() {

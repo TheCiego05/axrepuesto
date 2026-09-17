@@ -4,10 +4,28 @@
 let deferredInstall = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
-  // Verificar si hay sesión activa
-  const user = getUsuarioActual();
-  if (user) { mostrarApp(); await actualizarDashboard(); }
-  else { mostrarLogin(); }
+  // El enlace del correo de "recuperar contraseña" llega con
+  // #...&type=recovery en la URL. Lo detectamos directo por la URL en
+  // vez de depender del evento PASSWORD_RECOVERY (que puede dispararse
+  // antes de que alcancemos a suscribirnos a onAuthStateChange).
+  const esRecuperacion = /type=recovery/.test(window.location.hash);
+
+  // getClient() crea el cliente de Supabase, que es quien procesa el
+  // token de la URL — debe llamarse antes de limpiar el hash.
+  getClient().auth.onAuthStateChange((event) => {
+    if (event === 'PASSWORD_RECOVERY') mostrarNuevaPassword();
+  });
+
+  if (esRecuperacion) {
+    await getClient().auth.getSession(); // asegura que ya se procesó el token de la URL
+    history.replaceState(null, '', window.location.pathname); // limpiar el token de la URL
+    mostrarNuevaPassword();
+  } else {
+    // Verificar si hay sesión activa en Supabase Auth
+    const user = await initAuth();
+    if (user) { mostrarApp(); await actualizarDashboard(); }
+    else { mostrarLogin(); }
+  }
 
   window.addEventListener('beforeinstallprompt', e => {
     e.preventDefault(); deferredInstall = e;
