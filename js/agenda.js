@@ -20,7 +20,10 @@ async function renderParqueo(turnos, capacidadMax) {
   const grid = document.getElementById('parqueo-grid');
   if (!grid) return;
 
-  const turnosActivos = turnos.filter(t => t.estado !== 'cancelado');
+  // El parqueo representa capacidad física real: solo vehículos que ya
+  // están en el taller (en_taller). Una cita pendiente o confirmada que
+  // todavía no ha llegado no ocupa un espacio — eso se ve en Vista Lista.
+  const turnosActivos = turnos.filter(t => t.estado === 'en_taller');
   const espacios = [];
 
   // Fill occupied spaces
@@ -274,9 +277,11 @@ async function cargarAgenda(fecha = null) {
   const turnosDia = turnos.filter(t => t.fecha === hoy)
                           .sort((a,b) => a.hora.localeCompare(b.hora));
 
-  // Capacidad
+  // Capacidad: "ocupado" es un vehículo físicamente en el taller (en_taller),
+  // no una cita agendada/confirmada que todavía no ha llegado. Una cosa es
+  // el calendario de citas y otra la capacidad real del taller.
   const capacidadMax = parseInt(await getConfig('agenda_capacidad') || '5');
-  const ocupados = turnosDia.filter(t => t.estado !== 'cancelado').length;
+  const ocupados = turnosDia.filter(t => t.estado === 'en_taller').length;
   const disponibles = Math.max(0, capacidadMax - ocupados);
 
   // Update capacity display
