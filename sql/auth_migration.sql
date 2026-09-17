@@ -62,7 +62,17 @@ end;
 $$;
 
 revoke all on function crear_usuario_con_auth(text,text,bigint) from public;
+revoke all on function crear_usuario_con_auth(text,text,bigint) from anon; -- Supabase otorga EXECUTE a anon/authenticated por defecto al crear funciones; revocar de PUBLIC no basta, hay que revocarlo de anon explícitamente.
 grant execute on function crear_usuario_con_auth(text,text,bigint) to authenticated;
+
+-- 3.1 Políticas RLS: deben cubrir el rol `authenticated`, no solo `anon`.
+--     Si las políticas de tus tablas solo listan `{anon}` (revísalo con
+--     `select tablename, roles from pg_policies where schemaname='public'`),
+--     una vez que el login sea real, TODAS las peticiones autenticadas
+--     quedarán bloqueadas (perfil, órdenes, clientes, etc. dejan de verse).
+--     Ejemplo de arreglo para cada política existente:
+--       alter policy acceso_usuarios on usuarios to public;
+--     (repetir por cada tabla/política — "public" cubre anon + authenticated)
 
 -- 3. Migración de usuarios existentes (ya ejecutada manualmente para
 --    admin@llave10.com y p.santana@axentia.com.do): se crea la cuenta

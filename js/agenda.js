@@ -61,29 +61,7 @@ async function renderParqueo(turnos, capacidadMax) {
         </div>
 
         ${ocupado ? `
-          <!-- Silueta de carro SVG -->
-          <svg viewBox="0 0 120 60" style="width:90px;height:45px;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.15))">
-            <!-- Cuerpo del carro -->
-            <rect x="5" y="30" width="110" height="22" rx="4" fill="${color}"/>
-            <!-- Techo -->
-            <path d="M25 30 L35 12 L85 12 L95 30 Z" fill="${color}" opacity="0.9"/>
-            <!-- Parabrisas delantero -->
-            <path d="M80 28 L88 14 L85 12 L78 28 Z" fill="rgba(255,255,255,0.4)"/>
-            <!-- Parabrisas trasero -->
-            <path d="M40 28 L32 14 L35 12 L42 28 Z" fill="rgba(255,255,255,0.4)"/>
-            <!-- Ventanas laterales -->
-            <rect x="43" y="14" width="34" height="14" rx="2" fill="rgba(255,255,255,0.35)"/>
-            <!-- Rueda delantera -->
-            <circle cx="88" cy="52" r="9" fill="#1a1a2e"/>
-            <circle cx="88" cy="52" r="5" fill="#888"/>
-            <!-- Rueda trasera -->
-            <circle cx="32" cy="52" r="9" fill="#1a1a2e"/>
-            <circle cx="32" cy="52" r="5" fill="#888"/>
-            <!-- Faros delanteros -->
-            <rect x="108" y="33" width="7" height="6" rx="2" fill="rgba(255,255,200,0.9)"/>
-            <!-- Faros traseros -->
-            <rect x="5" y="33" width="7" height="6" rx="2" fill="rgba(255,80,80,0.9)"/>
-          </svg>
+          ${iconoVehiculoBadge(t.vehiculo_tipo, color)}
 
           <div style="font-size:0.72rem;font-weight:700;color:var(--text);margin-top:2px">
             ${t.vehiculo_placa || t.vehiculo_marca || 'Vehículo'}
@@ -105,17 +83,37 @@ async function renderParqueo(turnos, capacidadMax) {
           ">${t.estado === 'en_taller' ? '🔧 En Taller' : t.estado === 'completado' ? '✅ Listo' : '⏳ Pendiente'}</span>
         ` : `
           <!-- Espacio vacío -->
-          <svg viewBox="0 0 120 60" style="width:90px;height:45px;opacity:0.15">
-            <rect x="5" y="30" width="110" height="22" rx="4" fill="#888"/>
-            <path d="M25 30 L35 12 L85 12 L95 30 Z" fill="#888" opacity="0.9"/>
-            <circle cx="88" cy="52" r="9" fill="#555"/>
-            <circle cx="32" cy="52" r="9" fill="#555"/>
-          </svg>
+          ${iconoVehiculoBadge(null, '#c8daea')}
           <div style="font-size:0.72rem;color:#aaa;margin-top:4px">Disponible</div>
           <div style="font-size:0.65rem;color:#ccc">Toca para agendar</div>
         `}
       </div>`;
   }).join('');
+
+  if (window.lucide) lucide.createIcons();
+}
+
+// ---- ÍCONO DE VEHÍCULO (badge redondeado, por tipo) ----
+// Usa los íconos Lucide que ya carga el resto de la app (misma familia
+// visual que el sidebar y las tarjetas), en vez de dibujar carros a mano.
+function iconoVehiculoTipo(tipo) {
+  const map = {
+    sedan: 'car', hatchback: 'car', otro: 'car',
+    suv: 'car-front', pickup: 'truck', camion: 'truck',
+    minivan: 'bus', moto: 'bike',
+  };
+  return map[tipo] || 'car';
+}
+
+function iconoVehiculoBadge(tipo, color) {
+  return `
+    <div style="
+      width:56px;height:56px;border-radius:14px;flex-shrink:0;
+      background:${color}18;border:1px solid ${color}40;
+      display:flex;align-items:center;justify-content:center;
+    ">
+      <i data-lucide="${iconoVehiculoTipo(tipo)}" style="width:28px;height:28px;stroke:${color};stroke-width:1.7"></i>
+    </div>`;
 }
 
 function verTurnoParqueo(id) {
