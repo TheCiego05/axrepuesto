@@ -194,27 +194,40 @@ async function pagarTodasComisiones() {
   verComisionesMecanico(mecId);
 }
 
-// Calcular y registrar comisión al facturar
-async function registrarComisionMecanico(ordenId, facturaId, totalManoObra) {
+// Calcular y registrar comisión al facturar.
+// Cada arreglo puede tener su propio mecánico asignado (varios pueden
+// trabajar la misma orden en paralelo); se agrupa la mano de obra por
+// mecánico y se crea una comisión separada para cada uno. Si un arreglo
+// no tiene mecánico propio, se le atribuye al responsable de la orden.
+async function registrarComisionMecanico(ordenId, facturaId, arreglos) {
   try {
     const orden = await dbGet('ordenes', ordenId);
-    if (!orden?.mecanico_id) return;
 
-    const mecanico = await dbGet('mecanicos', orden.mecanico_id);
-    if (!mecanico) return;
-
-    const pct    = mecanico.porcentaje_mo || 40;
-    const monto  = (totalManoObra * pct) / 100;
-
-    await dbAdd('comisiones_mecanicos', {
-      mecanico_id:     mecanico.id,
-      orden_id:        ordenId,
-      factura_id:      facturaId,
-      mano_obra_total: totalManoObra,
-      porcentaje:      pct,
-      monto_comision:  monto,
-      estado:          'pendiente',
+    const porMecanico = {};
+    (arreglos || []).forEach(a => {
+      const mecId = a.mecanico_id || orden?.mecanico_id;
+      const mo    = parseFloat(a.manoObra || a.mano_obra || 0);
+      if (!mecId || mo <= 0) return;
+      porMecanico[mecId] = (porMecanico[mecId] || 0) + mo;
     });
+
+    for (const [mecId, mo] of Object.entries(porMecanico)) {
+      const mecanico = await dbGet('mecanicos', parseInt(mecId));
+      if (!mecanico) continue;
+
+      const pct   = mecanico.porcentaje_mo || 40;
+      const monto = (mo * pct) / 100;
+
+      await dbAdd('comisiones_mecanicos', {
+        mecanico_id:     mecanico.id,
+        orden_id:        ordenId,
+        factura_id:      facturaId,
+        mano_obra_total: mo,
+        porcentaje:      pct,
+        monto_comision:  monto,
+        estado:          'pendiente',
+      });
+    }
   } catch(e) {
     console.error('Error registrando comisión:', e);
   }
