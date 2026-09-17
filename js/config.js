@@ -479,11 +479,18 @@ async function eliminarMetodoPago(id) {
   cargarMetodosPagoConfig();
 }
 
-async function agregarMetodoPago() {
-  const nombre = prompt('Nombre del método de pago:');
-  if (!nombre?.trim()) return;
-  const icono = prompt('Emoji/ícono (ej: 💵):', '💳') || '💳';
-  await dbAdd('metodos_pago', { nombre: nombre.trim(), icono, activo: true, orden: 99 });
+function agregarMetodoPago() {
+  document.getElementById('mp-nombre').value = '';
+  document.getElementById('mp-icono').value  = '';
+  abrirModal('modal-metodo-pago');
+}
+
+async function confirmarMetodoPago() {
+  const nombre = document.getElementById('mp-nombre').value.trim();
+  if (!nombre) { showToast('El nombre es requerido', 'error'); return; }
+  const icono = document.getElementById('mp-icono').value.trim() || '💳';
+  await dbAdd('metodos_pago', { nombre, icono, activo: true, orden: 99 });
+  cerrarModal('modal-metodo-pago');
   showToast('Método agregado', 'success');
   cargarMetodosPagoConfig();
 }

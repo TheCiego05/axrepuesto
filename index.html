@@ -699,6 +699,16 @@
   <div class="modal-footer"><button class="btn btn-ghost" onclick="cerrarModal('modal-ajustar-stock')">Cancelar</button><button class="btn btn-primary" onclick="confirmarAjusteStock()">💾 Guardar</button></div></div>
 </div>
 
+<!-- MODAL NUEVO MÉTODO DE PAGO -->
+<div class="modal-overlay" id="modal-metodo-pago">
+  <div class="modal"><div class="modal-header"><h3>💳 Nuevo Método de Pago</h3><button class="modal-close" onclick="cerrarModal('modal-metodo-pago')">✕</button></div>
+  <div class="modal-body"><div class="form-grid form-grid-2">
+    <div class="form-group" style="grid-column:1/-1"><label>Nombre *</label><input id="mp-nombre" class="form-control" placeholder="Ej: Transferencia, Cheque..."></div>
+    <div class="form-group"><label>Ícono (emoji)</label><input id="mp-icono" class="form-control" placeholder="💳" maxlength="4"></div>
+  </div></div>
+  <div class="modal-footer"><button class="btn btn-ghost" onclick="cerrarModal('modal-metodo-pago')">Cancelar</button><button class="btn btn-primary" onclick="confirmarMetodoPago()">✅ Agregar</button></div></div>
+</div>
+
 <!-- MODAL NUEVA ORDEN -->
 <div class="modal-overlay" id="modal-orden">
   <div class="modal modal-lg"><div class="modal-header"><h3 id="orden-modal-titulo">Nueva Orden de Trabajo</h3><button class="modal-close" onclick="cerrarModal('modal-orden')">✕</button></div>

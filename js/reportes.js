@@ -101,7 +101,11 @@ async function exportarReporteCSV(tipo) {
     filename = 'inventario.csv';
   }
 
-  const csv = [headers, ...rows].map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+  // Escapar comillas dobles ("" es el estándar CSV) — si no, un valor con
+  // comillas (ej. una dirección o nota) corta la columna a la mitad y
+  // desalinea el resto del archivo al abrirlo en Excel/Sheets.
+  const csvVal = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
+  const csv = [headers, ...rows].map(r => r.map(csvVal).join(',')).join('\n');
   const blob = new Blob(['\uFEFF'+csv], { type: 'text/csv;charset=utf-8;' });
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
