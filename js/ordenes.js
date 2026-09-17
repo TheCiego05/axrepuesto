@@ -224,20 +224,33 @@ function guardarArregloTemp() {
   renderArreglosTemp();
 }
 
-function renderArreglosTemp() {
+async function renderArreglosTemp() {
   const c = document.getElementById('arreglos-temp-lista');
   if (!arreglosTemp.length) {
     c.innerHTML = '<p class="text-sm text-muted" style="padding:10px 0">Sin arreglos. Agrega al menos uno.</p>';
     return;
   }
+  const mecanicos = (await dbGetAll('mecanicos')).filter(m => m.activo !== false);
+  const opts = (seleccionadoId) => '<option value="">— Sin asignar —</option>' +
+    mecanicos.map(m => `<option value="${m.id}" ${String(m.id)===String(seleccionadoId)?'selected':''}>${m.nombre} ${m.apellido||''}</option>`).join('');
+
   c.innerHTML = arreglosTemp.map((a,i) => `
     <div class="arreglo-item">
-      <div class="arreglo-desc"><strong>${a.descripcion}</strong><span>${formatMoney(a.manoObra)}${a.mecanico_nombre?' · 🔧 '+a.mecanico_nombre:''}</span></div>
+      <div class="arreglo-desc">
+        <strong>${a.descripcion}</strong><span>${formatMoney(a.manoObra)}</span>
+        <select class="form-control mt-2" style="font-size:0.72rem;padding:4px 6px" onchange="cambiarMecanicoTemp(${i},this)">${opts(a.mecanico_id)}</select>
+      </div>
       <div class="arreglo-actions"><button class="btn btn-xs btn-danger" onclick="eliminarArregloTemp(${i})">🗑️</button></div>
     </div>`).join('');
 }
 
 function eliminarArregloTemp(i) { arreglosTemp.splice(i,1); renderArreglosTemp(); }
+
+function cambiarMecanicoTemp(i, sel) {
+  const opt = sel.options[sel.selectedIndex];
+  arreglosTemp[i].mecanico_id     = sel.value ? parseInt(sel.value) : null;
+  arreglosTemp[i].mecanico_nombre = sel.value ? opt.textContent.trim() : '';
+}
 
 async function guardarOrden() {
   const btn = document.querySelector('#modal-orden .btn-primary');

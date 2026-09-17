@@ -300,10 +300,9 @@ async function confirmarFactura() {
       }
     }
 
-    // Comisión mecánico
-    const totalMO = facturaActual.arreglos.reduce((s,a) => s + parseFloat(a.manoObra||a.mano_obra||0), 0);
-    if (totalMO > 0 && typeof registrarComisionMecanico === 'function') {
-      await registrarComisionMecanico(facturaActual.orden.id, facturaId, totalMO);
+    // Comisión mecánico (repartida por quien hizo cada arreglo)
+    if (typeof registrarComisionMecanico === 'function') {
+      await registrarComisionMecanico(facturaActual.orden.id, facturaId, facturaActual.arreglos);
     }
 
     cerrarModal('modal-facturar');
