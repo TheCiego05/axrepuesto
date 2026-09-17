@@ -342,8 +342,47 @@ async function cambiarEstadoTurno(id, estadoActual) {
   const siguiente = estados[(idx + 1) % estados.length];
   const turno = await dbGet('agenda', id);
   await dbUpdate('agenda', { ...turno, estado: siguiente });
+
+  if (siguiente === 'confirmado') {
+    await crearOrdenAutomaticaDesdeTurno({ ...turno, estado: siguiente });
+    showToast('Turno confirmado — orden de trabajo creada', 'success');
+  } else {
+    showToast('Estado actualizado', 'success');
+  }
   cargarAgenda(document.getElementById('agenda-fecha').value);
-  showToast('Estado actualizado', 'success');
+}
+
+// Crea (una sola vez) la orden de trabajo ligada a un turno confirmado.
+// Si el turno ya tiene orden_id, no duplica nada.
+async function crearOrdenAutomaticaDesdeTurno(turno) {
+  if (turno.orden_id) return turno.orden_id;
+
+  const data = {
+    cliente_id:      turno.cliente_id || null,
+    cliente_nombre:  turno.cliente_nombre || 'Cliente sin registrar',
+    vehiculo_placa:  turno.vehiculo_placa || '',
+    vehiculo_marca:  turno.vehiculo_marca || '',
+    vehiculo_modelo: turno.vehiculo_modelo || '',
+    mecanico_id:     turno.mecanico_id || null,
+    mecanico:        turno.mecanico_nombre || '',
+    estado_orden:    'recibido',
+    prioridad:       'normal',
+    kilometraje:     turno.vehiculo_km || null,
+    notas:           `Generada desde Agenda · turno ${formatDate(turno.fecha)} ${turno.hora||''}`.trim(),
+    arreglos: [{
+      descripcion:     turno.servicio || 'Servicio general',
+      manoObra:        0,
+      estado:          'en_proceso',
+      repuestos:       [],
+      mecanico_id:     turno.mecanico_id || null,
+      mecanico_nombre: turno.mecanico_nombre || '',
+    }],
+  };
+
+  const ordenId = await dbAdd('ordenes', data);
+  await dbUpdate('agenda', { ...turno, orden_id: ordenId });
+  if (typeof actualizarDashboard === 'function') actualizarDashboard();
+  return ordenId;
 }
 
 async function eliminarTurno(id) {
@@ -466,35 +505,34 @@ async function guardarTurno() {
     })(),
   };
 
+  let turno;
   if (turnoEditId) {
     const ex = await dbGet('agenda', turnoEditId);
-    await dbUpdate('agenda', { ...ex, ...data, id: turnoEditId });
+    turno = { ...ex, ...data, id: turnoEditId };
+    await dbUpdate('agenda', turno);
     showToast('Turno actualizado', 'success');
   } else {
-    await dbAdd('agenda', data);
+    const nuevoId = await dbAdd('agenda', data);
+    turno = { ...data, id: nuevoId };
     showToast('Turno agendado', 'success');
+  }
+
+  if (turno.estado === 'confirmado') {
+    await crearOrdenAutomaticaDesdeTurno(turno);
   }
 
   cerrarModal('modal-turno');
   cargarAgenda(fecha);
 }
 
+// Botón manual "Crear Orden" (Vista Lista): si el turno confirmado ya
+// generó su orden automáticamente, solo la abre; si no, la crea ahora.
 async function crearOrdenDesdeTurno(turnoId) {
   const turno = await dbGet('agenda', turnoId);
   if (!turno) return;
-
-  // Navegar a órdenes y pre-llenar
+  const ordenId = await crearOrdenAutomaticaDesdeTurno(turno);
   navegarA('ordenes');
-  setTimeout(async () => {
-    await abrirModalOrden();
-    if (turno.cliente_id) {
-      document.getElementById('ord-cliente').value = turno.cliente_id;
-      await cargarVehiculosOrden(turno.cliente_id);
-    }
-    document.getElementById('ord-notas').value = `Turno ${turno.hora} - ${turno.servicio}`;
-    // Marcar turno como en_taller
-    await dbUpdate('agenda', { ...turno, estado: 'en_taller' });
-  }, 400);
+  setTimeout(() => abrirPanelOrden(ordenId), 300);
 }
 
 async function guardarCapacidadDiaria() {
