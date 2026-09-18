@@ -86,10 +86,25 @@ async function guardarCliente() {
 async function editarCliente(id) { abrirModalCliente(id); }
 
 async function eliminarCliente(id) {
-  if (!await confirmar('¿Eliminar este cliente?')) return;
-  await dbDelete('clientes', id);
-  showToast('Cliente eliminado', 'info');
-  cargarClientes();
+  // Borrar un cliente elimina en cascada sus vehículos (a nivel de base de
+  // datos) — hay que avisarlo explícitamente, no solo "¿eliminar cliente?".
+  const vehiculos = await dbGetByIndex('vehiculos', 'cliente_id', id);
+  const aviso = vehiculos.length
+    ? ` Esto también eliminará ${vehiculos.length} vehículo(s) registrado(s) a su nombre.`
+    : '';
+  if (!await confirmar(`¿Eliminar este cliente? Esta acción no se puede deshacer.${aviso}`)) return;
+
+  try {
+    await dbDelete('clientes', id);
+    showToast('Cliente eliminado', 'info');
+    cargarClientes();
+  } catch(err) {
+    if (err.code === '23503') {
+      showToast('No se puede eliminar: este cliente tiene órdenes, facturas o cuentas por cobrar asociadas.', 'error');
+    } else {
+      showToast('Error: ' + err.message, 'error');
+    }
+  }
 }
 
 // ---- VEHÍCULOS ----
@@ -169,9 +184,17 @@ async function editarVehiculo(id) { abrirModalVehiculo(id); }
 
 async function eliminarVehiculo(id) {
   if (!await confirmar('¿Eliminar este vehículo?')) return;
-  await dbDelete('vehiculos', id);
-  showToast('Vehículo eliminado', 'info');
-  cargarVehiculos(vehiculoClienteId);
+  try {
+    await dbDelete('vehiculos', id);
+    showToast('Vehículo eliminado', 'info');
+    cargarVehiculos(vehiculoClienteId);
+  } catch(err) {
+    if (err.code === '23503') {
+      showToast('No se puede eliminar: este vehículo tiene órdenes de trabajo asociadas.', 'error');
+    } else {
+      showToast('Error: ' + err.message, 'error');
+    }
+  }
 }
 
 // ---- TABS DEL MODAL CLIENTE ----
@@ -222,7 +245,15 @@ function tipoVehiculoLabel(tipo) {
 
 async function eliminarVehiculoEnModal(id) {
   if (!await confirmar('¿Eliminar este vehículo?')) return;
-  await dbDelete('vehiculos', id);
-  showToast('Vehículo eliminado', 'info');
-  cargarVehiculosEnModal(clienteEditId);
+  try {
+    await dbDelete('vehiculos', id);
+    showToast('Vehículo eliminado', 'info');
+    cargarVehiculosEnModal(clienteEditId);
+  } catch(err) {
+    if (err.code === '23503') {
+      showToast('No se puede eliminar: este vehículo tiene órdenes de trabajo asociadas.', 'error');
+    } else {
+      showToast('Error: ' + err.message, 'error');
+    }
+  }
 }
