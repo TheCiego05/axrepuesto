@@ -112,6 +112,9 @@ async function cambiarEstadoOrden(ordenId, nuevoEstado) {
   const orden = await dbGet('ordenes', ordenId);
   if (!orden) return;
   await dbUpdate('ordenes', { ...orden, estado_orden: nuevoEstado });
+  if (typeof sincronizarTurnoDesdeOrden === 'function') {
+    await sincronizarTurnoDesdeOrden(ordenId, nuevoEstado);
+  }
   cargarOrdenes();
   actualizarDashboard();
   showToast('Estado actualizado', 'success');
@@ -131,9 +134,20 @@ async function cambiarEstadoArreglo(ordenId, idx, nuevoEstado) {
 async function eliminarArreglo(ordenId, idx) {
   if (!await confirmar('¿Eliminar este arreglo?')) return;
   const orden = await dbGet('ordenes', ordenId);
+  const arreglo = orden.arreglos[idx];
+
+  // Devolver al inventario los repuestos que tenía este arreglo — si no,
+  // el stock queda descontado para siempre aunque el arreglo se borre.
+  for (const r of (arreglo?.repuestos || [])) {
+    if (!r.repuestoId) continue;
+    const rep = await dbGet('repuestos', r.repuestoId);
+    if (rep) await dbUpdate('repuestos', { ...rep, stock: (rep.stock || 0) + (parseFloat(r.cantidad) || 0) });
+  }
+
   orden.arreglos.splice(idx, 1);
   await dbUpdate('ordenes', orden);
   cargarOrdenes();
+  showToast('Arreglo eliminado y stock restaurado', 'info');
 }
 
 async function abrirModalOrden() {
