@@ -280,10 +280,9 @@ async function confirmarFactura() {
 
     // Si esta orden vino de una cita de Agenda, liberar su espacio de
     // parqueo: el vehículo ya se entregó, deja de ocupar capacidad.
-    await getClient().from('agenda')
-      .update({ estado: 'completado' })
-      .eq('orden_id', facturaActual.orden.id)
-      .eq('estado', 'en_taller');
+    if (typeof sincronizarTurnoDesdeOrden === 'function') {
+      await sincronizarTurnoDesdeOrden(facturaActual.orden.id, 'entregado');
+    }
 
     // Si no se pagó el total, dejar el saldo en Cuentas por Cobrar
     const saldoPendiente = facturaActual.total - montoPagado;

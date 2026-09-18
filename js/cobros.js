@@ -63,33 +63,41 @@ async function abrirModalPago(cuentaId) {
 }
 
 async function guardarPago() {
+  const btn = document.querySelector('#modal-pago .btn-primary');
   const cuenta = await dbGet('cuentas_cobrar', cuenta_cobrar_id);
   const monto = parseFloat(document.getElementById('pago-monto').value) || 0;
   if (monto <= 0) { showToast('Monto inválido', 'error'); return; }
   if (monto > cuenta.monto_pendiente) { showToast('El monto excede el pendiente', 'error'); return; }
 
-  const u = getUsuarioActual();
-  await dbAdd('pagos', {
-    cuenta_cobrar_id: cuenta_cobrar_id,
-    factura_id: cuenta.factura_id,
-    monto,
-    metodo_pago: document.getElementById('pago-metodo').value,
-    referencia: document.getElementById('pago-referencia').value.trim(),
-    usuario_id: u?.id,
-  });
+  btnLoading(btn, 'Guardando...');
+  try {
+    const u = getUsuarioActual();
+    await dbAdd('pagos', {
+      cuenta_cobrar_id: cuenta_cobrar_id,
+      factura_id: cuenta.factura_id,
+      monto,
+      metodo_pago: document.getElementById('pago-metodo').value,
+      referencia: document.getElementById('pago-referencia').value.trim(),
+      usuario_id: u?.id,
+    });
 
-  const nuevoPagado = (parseFloat(cuenta.monto_pagado) || 0) + monto;
-  const nuevoEstado = nuevoPagado >= cuenta.monto_total ? 'pagado' : 'parcial';
-  await dbUpdate('cuentas_cobrar', {
-    id: cuenta_cobrar_id,
-    monto_pagado: nuevoPagado,
-    estado: nuevoEstado,
-  });
+    const nuevoPagado = (parseFloat(cuenta.monto_pagado) || 0) + monto;
+    const nuevoEstado = nuevoPagado >= cuenta.monto_total ? 'pagado' : 'parcial';
+    await dbUpdate('cuentas_cobrar', {
+      id: cuenta_cobrar_id,
+      monto_pagado: nuevoPagado,
+      estado: nuevoEstado,
+    });
 
-  cerrarModal('modal-pago');
-  showToast('Pago registrado correctamente', 'success');
-  cargarCobros();
-  actualizarDashboard();
+    cerrarModal('modal-pago');
+    showToast('Pago registrado correctamente', 'success');
+    cargarCobros();
+    actualizarDashboard();
+  } catch(err) {
+    showToast('Error: ' + err.message, 'error');
+  } finally {
+    btnReset(btn);
+  }
 }
 
 async function verHistorialPagos(cuentaId) {

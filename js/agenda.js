@@ -4,6 +4,31 @@ function seleccionarMecanicoTurno(sel) {
   if (idEl) idEl.value = sel.value;
 }
 
+// Mantiene el turno de Agenda (y por lo tanto el parqueo) en sincronía
+// con el estado real de la orden, sin importar por dónde se cambió el
+// estado (Facturar, el desplegable de Órdenes, el panel lateral, etc.).
+// Antes solo Facturar liberaba el espacio; cambiar el estado a
+// "Entregado" desde Órdenes lo dejaba ocupado para siempre.
+async function sincronizarTurnoDesdeOrden(ordenId, nuevoEstadoOrden) {
+  const mapaEstados = { entregado: 'completado', en_taller: 'en_taller', cancelado: 'cancelado' };
+  const nuevoEstadoTurno = mapaEstados[nuevoEstadoOrden];
+  if (!nuevoEstadoTurno) return;
+
+  try {
+    const { data: turnos } = await getClient().from('agenda').select('*').eq('orden_id', ordenId);
+    for (const turno of (turnos || [])) {
+      if (turno.estado === nuevoEstadoTurno) continue;
+      const cambios = { estado: nuevoEstadoTurno };
+      if (nuevoEstadoTurno === 'en_taller' && !turno.en_taller_desde) {
+        cambios.en_taller_desde = new Date().toISOString();
+      }
+      await getClient().from('agenda').update(cambios).eq('id', turno.id);
+    }
+  } catch(e) {
+    console.error('Error sincronizando turno con orden:', e);
+  }
+}
+
 // ---- VISTA PARQUEO ----
 let agendaViewActual = 'parqueo';
 
