@@ -370,8 +370,25 @@ async function abrirDetalleOrden(id) {
 
 async function eliminarOrden(id) {
   if (!await confirmar('¿Eliminar esta orden? Esta acción no se puede deshacer.')) return;
+  const orden = await dbGet('ordenes', id);
+
+  // Devolver al inventario todos los repuestos usados en esta orden
+  for (const a of (orden?.arreglos || [])) {
+    for (const r of (a.repuestos || [])) {
+      if (!r.repuestoId) continue;
+      const rep = await dbGet('repuestos', r.repuestoId);
+      if (rep) await dbUpdate('repuestos', { ...rep, stock: (rep.stock || 0) + (parseFloat(r.cantidad) || 0) });
+    }
+  }
+
+  // Si la orden vino de una cita de Agenda, liberar el turno en vez de
+  // dejarlo apuntando a una orden que ya no existe.
+  try {
+    await getClient().from('agenda').update({ estado: 'cancelado', orden_id: null }).eq('orden_id', id);
+  } catch(e) { console.error('Error liberando turno de la orden eliminada:', e); }
+
   await dbDelete('ordenes', id);
-  showToast('Orden eliminada','info');
+  showToast('Orden eliminada — stock restaurado','info');
   cargarOrdenes();
   actualizarDashboard();
 }
