@@ -94,6 +94,27 @@ async function guardarUsuario() {
 }
 
 async function toggleUsuario(id, nuevoEstado) {
+  const actual = getUsuarioActual();
+
+  if (!nuevoEstado) {
+    if (actual?.id === id) {
+      showToast('No puedes desactivar tu propia cuenta.', 'error');
+      return;
+    }
+    // Evitar quedarse sin ningún Super Admin/Gerente activo que pueda
+    // reactivar cuentas después.
+    const todos = await dbGetAll('usuarios');
+    const otrosAdminsActivos = todos.filter(u =>
+      u.id !== id && u.activo !== false && [1,2].includes(u.rol_id)
+    );
+    if (!otrosAdminsActivos.length) {
+      showToast('No puedes desactivar al único Super Admin/Gerente activo — nadie más podría reactivar cuentas.', 'error');
+      return;
+    }
+  }
+
+  if (!await confirmar(nuevoEstado ? '¿Activar este usuario?' : '¿Desactivar este usuario? No podrá iniciar sesión hasta que lo reactives.')) return;
+
   const u = await dbGet('usuarios', id);
   await dbUpdate('usuarios', { ...u, activo: nuevoEstado });
   showToast(nuevoEstado ? 'Usuario activado' : 'Usuario desactivado', 'info');
