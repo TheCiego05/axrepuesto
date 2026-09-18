@@ -16,9 +16,10 @@ async function generarResumenPeriodo(periodo = '30') {
   const desde = new Date();
   desde.setDate(desde.getDate() - dias);
 
-  const [facturas, ordenes, clientes, cobros] = await Promise.all([
+  const [facturas, ordenes, clientes, cobros, comisiones, mecanicos] = await Promise.all([
     dbGetAll('facturas'), dbGetAll('ordenes'),
-    dbGetAll('clientes'), dbGetAll('cuentas_cobrar')
+    dbGetAll('clientes'), dbGetAll('cuentas_cobrar'),
+    dbGetAll('comisiones_mecanicos'), dbGetAll('mecanicos'),
   ]);
 
   const facPeriodo = facturas.filter(f => new Date(f.creado_en) >= desde);
@@ -74,6 +75,107 @@ async function generarResumenPeriodo(periodo = '30') {
   } else {
     metodosEl.innerHTML = '<p class="text-muted text-sm">Sin facturas en el período</p>';
   }
+
+  renderReparacionesPeriodo(ordPeriodo);
+  renderComisionesPeriodo(comisiones.filter(c => new Date(c.creado_en) >= desde), mecanicos);
+}
+
+// ---- REPARACIONES DEL PERÍODO ----
+function renderReparacionesPeriodo(ordPeriodo) {
+  const arreglos = ordPeriodo.flatMap(o => o.arreglos || []);
+  const total       = arreglos.length;
+  const completadas = arreglos.filter(a => a.estado === 'listo').length;
+  const enProceso   = arreglos.filter(a => a.estado === 'en_proceso').length;
+  const enPrueba    = arreglos.filter(a => a.estado === 'prueba').length;
+
+  const statsEl = document.getElementById('rep-reparaciones-stats');
+  if (statsEl) {
+    statsEl.innerHTML = `
+      <div class="stat-card blue"><div class="label">Total</div><div class="value" style="font-size:1.2rem">${total}</div></div>
+      <div class="stat-card green"><div class="label">✅ Completadas</div><div class="value" style="font-size:1.2rem">${completadas}</div></div>
+      <div class="stat-card yellow"><div class="label">🔧 En Proceso</div><div class="value" style="font-size:1.2rem">${enProceso}</div></div>
+      <div class="stat-card purple"><div class="label">🔵 En Prueba</div><div class="value" style="font-size:1.2rem">${enPrueba}</div></div>`;
+  }
+
+  const porMec = {};
+  arreglos.forEach(a => {
+    const nombre = a.mecanico_nombre || 'Sin asignar';
+    if (!porMec[nombre]) porMec[nombre] = { total: 0, listas: 0 };
+    porMec[nombre].total++;
+    if (a.estado === 'listo') porMec[nombre].listas++;
+  });
+
+  const mecEl = document.getElementById('rep-reparaciones-mecanico');
+  const entradas = Object.entries(porMec).sort((a,b) => b[1].total - a[1].total);
+  if (mecEl) {
+    mecEl.innerHTML = entradas.length
+      ? entradas.map(([nombre, d]) => `
+        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:0.82rem">
+          <span>🔧 ${nombre}</span>
+          <span>${d.listas}/${d.total} completadas</span>
+        </div>`).join('')
+      : '<p class="text-muted text-sm">Sin reparaciones en el período</p>';
+  }
+}
+
+// ---- COMISIONES POR MECÁNICO ----
+let comisionesPeriodoActual = [];
+
+function renderComisionesPeriodo(comisionesPeriodo, mecanicos) {
+  comisionesPeriodoActual = comisionesPeriodo;
+  const nombreMec = id => mecanicos.find(m => m.id === id);
+
+  const porMec = {};
+  comisionesPeriodo.forEach(c => {
+    if (!porMec[c.mecanico_id]) porMec[c.mecanico_id] = { manoObra: 0, comision: 0, pagado: 0, pendiente: 0, reparaciones: 0 };
+    const g = porMec[c.mecanico_id];
+    g.manoObra += parseFloat(c.mano_obra_total || 0);
+    g.comision += parseFloat(c.monto_comision || 0);
+    g.reparaciones++;
+    if (c.estado === 'pagado') g.pagado += parseFloat(c.monto_comision || 0);
+    else g.pendiente += parseFloat(c.monto_comision || 0);
+  });
+
+  const tbody = document.getElementById('rep-comisiones-tbody');
+  if (!tbody) return;
+  const filas = Object.entries(porMec);
+  if (!filas.length) {
+    tbody.innerHTML = `<tr><td colspan="6">${emptyState('💰','Sin comisiones en el período','Aparecerán aquí cuando factures órdenes con mecánico asignado')}</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = filas.map(([mecId, d]) => {
+    const mec = nombreMec(parseInt(mecId));
+    const nombre = mec ? `${mec.nombre} ${mec.apellido||''}`.trim() : `Mecánico #${mecId}`;
+    return `
+    <tr>
+      <td><strong>${nombre}</strong></td>
+      <td class="mono text-sm">${d.reparaciones}</td>
+      <td class="mono text-sm">${formatMoney(d.manoObra)}</td>
+      <td class="mono text-sm">${formatMoney(d.comision)}</td>
+      <td class="mono text-sm" style="color:var(--green)">${formatMoney(d.pagado)}</td>
+      <td class="mono text-sm" style="color:var(--red)">${formatMoney(d.pendiente)}</td>
+    </tr>`;
+  }).join('');
+}
+
+async function exportarComisionesCSV() {
+  if (!comisionesPeriodoActual.length) { showToast('No hay comisiones que exportar en este período', 'error'); return; }
+  const mecanicos = await dbGetAll('mecanicos');
+  const headers = ['Mecánico','Orden','Fecha','Mano de Obra','%','Comisión','Estado'];
+  const rows = comisionesPeriodoActual.map(c => {
+    const mec = mecanicos.find(m => m.id === c.mecanico_id);
+    const nombre = mec ? `${mec.nombre} ${mec.apellido||''}`.trim() : `Mecánico #${c.mecanico_id}`;
+    return [nombre, `#${String(c.orden_id).padStart(4,'0')}`, formatDate(c.creado_en),
+      c.mano_obra_total, c.porcentaje, c.monto_comision, c.estado];
+  });
+  const csvVal = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
+  const csv = [headers, ...rows].map(r => r.map(csvVal).join(',')).join('\n');
+  const blob = new Blob(['﻿'+csv], { type: 'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = 'comisiones_mecanicos.csv'; a.click();
+  URL.revokeObjectURL(url);
+  showToast('Archivo descargado', 'success');
 }
 
 function iconMetodo(m) {
